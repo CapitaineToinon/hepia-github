@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <time.h>
 #include "rsa.h"
 
 int main()
@@ -61,11 +62,17 @@ int main()
   };
 
   int length = (sizeof(groups) / sizeof(groups[0]));
-  u_int64_t *decoded = crack_groups(groups, length, e, n);
+  clock_t start_t, end_t, total_t;
 
+  start_t = clock();
+  u_int64_t *decoded = crack_groups(groups, length, e, n);
+  end_t = clock();
+
+  total_t = (end_t - start_t);
+  printf("Total time taken by CPU: %dμs\n", (int)total_t);
+
+  // Print groups as utf-8
   for (int i = 0; i < length; i++)
-  {
     printf("%s", (char*)&decoded[i]);
-  }
   printf("\n");
 }
