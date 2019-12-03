@@ -8,7 +8,7 @@
  * For example, the if the number number 27 is prime, then the bit 2 ^ 27 would be 0.
  * The returned valued is an array of uint64.
  */ 
-u_int64_t *SieveOfEratosthenes(u_int64_t n, u_int64_t *array_size)
+u_int64_t *sieve_of_eratosthenes(u_int64_t n, u_int64_t *array_size)
 {
   u_int64_t size = (n / sizeof(u_int64_t));
 
@@ -44,7 +44,7 @@ u_int64_t *SieveOfEratosthenes(u_int64_t n, u_int64_t *array_size)
 
 /**
  * Returns the prime factors for the value x.
- * The list of primes first needs to be processed by the function SieveOfEratosthenes
+ * The list of primes first needs to be processed by the function sieve_of_eratosthenes
  */ 
 void get_prime_factors(u_int64_t *flags, u_int64_t x, u_int64_t *p, u_int64_t *q)
 {

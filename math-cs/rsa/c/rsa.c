@@ -36,7 +36,7 @@ u_int64_t *crack_groups(u_int64_t *groups, u_int64_t length, u_int64_t e, u_int6
   // 1. Get all the primes numbers from 2 to the square root of n
   u_int64_t size = 0;
   u_int64_t max = (u_int64_t)floor(sqrt(n));
-  u_int64_t *flags = SieveOfEratosthenes(max, &size);
+  u_int64_t *flags = sieve_of_eratosthenes(max, &size);
 
   // 2. get the prime factors of n
   u_int64_t p, q;
