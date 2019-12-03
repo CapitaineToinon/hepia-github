@@ -1,3 +1,6 @@
+'''
+Return the gcd and bezout coeffs for 2 numbers
+'''
 def get_gcd_bezout(a, b):
   # Important to keep track if we swapped or not
   # since it changes which coef we care about.
