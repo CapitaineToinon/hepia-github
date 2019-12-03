@@ -1,27 +1,62 @@
 #include <stdio.h>
 #include "output.h"
 
-void print_board(int **p, int N, int M)
+/**
+ * Converted from https://stackoverflow.com/questions/48677066/printing-a-grid
+ */
+void print_board(int **p, int userRows, int userColumns)
 {
-    int i, j;
-
-    for (i = 0; i < M; i++)
-        printf("%d", i + 1);
-
     printf("\n");
-
-    for (i = 0; i < N; i++)
+    printf(" ");
+    int i = 1, j;
+    for (j = 0; j <= 4 * userColumns; j++)
     {
-        for (j = 0; j < M; j++)
+        if (j % 4 == 2)
+            printf("%d", i++);
+        else
+            printf(" ");
+    }
+    printf("\n");
+    for (i = 0; i <= 2 * userRows; i++)
+    {
+        if (i % 2 != 0)
+            printf(" "); //, (char)(i / 2 + ' '));
+
+        for (j = 0; j <= 2 * userColumns; j++)
         {
-            if (p[i][j] == 1)
-                printf("%c", PLAYER_CHAR);
+            if (i % 2 == 0)
+            {
+                if (j == 0)
+                    printf(" ");
+                if (j % 2 == 0)
+                    printf("+");
+                else
+                    printf("---");
+            }
+            else
+            {
+                if (j % 2 == 0)
+                    printf("|");
+                else
+                {
+                    char c;
+                    switch (p[i / 2][j / 2])
+                    {
+                        case 1:
+                            c = PLAYER_CHAR;
+                            break;
+                        case 2:
+                            c = CPU_CHAR;
+                            break;
+                        case 0:
+                        default:
+                            c = NOONE_CHAR;
+                            break;
+                    }
 
-            if (p[i][j] == 2)
-                printf("%c", CPU_CHAR);
-
-            if (p[i][j] == 0)
-                printf("%c", NOONE_CHAR);
+                    printf(" %c ", c);
+                }
+            }
         }
         printf("\n");
     }
