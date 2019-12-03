@@ -1,58 +1,10 @@
 #include <stdio.h>
-#include "prime.h"
-#include "bezout.h"
-
-typedef unsigned char BYTE;
-
-void print_bytes(u_int64_t value)
-{
-  for (int i = 0; i < 4; i++)
-  {
-    BYTE b = ((value >> (8 * i)) & 0xFF); //extract byte
-    if (b > 0x00)
-      printf("%02X", b);
-  }
-}
-
-u_int64_t decode(u_int64_t message, u_int64_t e, u_int64_t n, u_int64_t d)
-{
-  u_int64_t r = 1, b = message;
-  e = d;
-
-  while (e > 0)
-  {
-    if (e % 2 == 1)
-    {
-      r = (r * b) % n;
-    }
-    b = (b * b) % n;
-    e = e / 2;
-  }
-
-  return r;
-}
+#include "rsa.h"
 
 int main()
 {
-  uint64_t n = 1190836873ULL;
-  uint64_t e = 1051ULL;
-  uint64_t size = 0;
-
-  u_int64_t max = (u_int64_t)floor(sqrt(n));
-  u_int64_t *flags = SieveOfEratosthenes(max, &size);
-
-  u_int64_t p, q;
-  get_prime_factors(flags, n, &p, &q);
-
-  u_int64_t fn = (p - 1) * (q - 1);
-  u_int64_t gcd;
-  int64_t d, f;
-  get_gcd_bezout(e, fn, &gcd, &d, &f);
-
-  // ensure d isn't negative
-  if (d < 0)
-    d = d % fn;
-
+  uint64_t n = 1190836873;
+  uint64_t e = 1051;
   u_int64_t groups[] = {
       139625027,
       728808256,
@@ -108,10 +60,12 @@ int main()
       6952392,
   };
 
-  int Length = (sizeof(groups) / sizeof(groups[0]));
-  for (int i = 0; i < Length; i++)
+  int length = (sizeof(groups) / sizeof(groups[0]));
+  u_int64_t *decoded = crack_groups(groups, length, e, n);
+
+  for (int i = 0; i < length; i++)
   {
-    uint64_t decoded = decode(groups[i], e, n, d);
-    print_bytes(decoded);
+    printf("%s", (char*)&decoded[i]);
   }
+  printf("\n");
 }
