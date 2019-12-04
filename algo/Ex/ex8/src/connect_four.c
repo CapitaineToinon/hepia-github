@@ -1,6 +1,3 @@
-#include <stdlib.h>
-#include <stdbool.h>
-#include <time.h>
 #include "connect_four.h"
 
 // game over functions

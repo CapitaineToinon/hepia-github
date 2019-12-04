@@ -1,3 +1,7 @@
+#include <stdlib.h>
+#include <stdbool.h>
+#include <time.h>
+
 #define NOONE 0
 #define PLAYER1 1
 #define PLAYER2 2

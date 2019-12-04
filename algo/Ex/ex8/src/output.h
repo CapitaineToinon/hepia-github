@@ -1,3 +1,5 @@
+#include <stdio.h>
+
 #define PLAYER_CHAR '#'
 #define CPU_CHAR 'O'
 #define NOONE_CHAR ' '

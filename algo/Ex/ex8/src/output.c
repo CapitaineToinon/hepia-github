@@ -1,4 +1,5 @@
-#include <stdio.h>
+
+#include "connect_four.h"
 #include "output.h"
 
 /**
@@ -6,13 +7,18 @@
  */
 void print_board(int **p, int userRows, int userColumns)
 {
-    printf("\n");
-    printf(" ");
+    printf("\n ");
     int i = 1, j;
     for (j = 0; j <= 4 * userColumns; j++)
     {
         if (j % 4 == 2)
-            printf("%d", i++);
+        {
+            if (get_available_row(p, userRows, i) != -1)
+                printf("%d", i);
+            else
+                printf(" ");
+            i++;
+        }
         else
             printf(" ");
     }
@@ -20,7 +26,7 @@ void print_board(int **p, int userRows, int userColumns)
     for (i = 0; i <= 2 * userRows; i++)
     {
         if (i % 2 != 0)
-            printf(" "); //, (char)(i / 2 + ' '));
+            printf(" ");
 
         for (j = 0; j <= 2 * userColumns; j++)
         {
