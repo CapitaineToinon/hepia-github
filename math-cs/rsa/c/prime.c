@@ -10,7 +10,7 @@
  *  - if the number 75 is prime, then the bit 2 ^ (75 % 64) would be 0 in the (27 / 64) uint64 in the array
  *  
  * The returned valued is an array of uint64.
- */ 
+ */
 u_int64_t *sieve_of_eratosthenes(u_int64_t n, u_int64_t *array_size)
 {
   (*array_size) = (n / sizeof(u_int64_t));
@@ -53,7 +53,7 @@ u_int64_t *sieve_of_eratosthenes(u_int64_t n, u_int64_t *array_size)
 /**
  * Returns the prime factors for the value x.
  * The list of primes first needs to be processed by the function sieve_of_eratosthenes
- */ 
+ */
 void get_prime_factors(u_int64_t *flags, u_int64_t x, u_int64_t *p, u_int64_t *q)
 {
   u_int64_t flag_group, flag;
@@ -77,6 +77,54 @@ void get_prime_factors(u_int64_t *flags, u_int64_t x, u_int64_t *p, u_int64_t *q
         *q = x / candidate;
         break;
       }
+    }
+  }
+}
+
+/**
+ * Returns the prime factors for the value x.
+ * Brute force version
+ */
+void get_prime_factors_force(u_int64_t x, u_int64_t *p, u_int64_t *q)
+{
+  u_int64_t max = (u_int64_t)floor(sqrt(x));
+  *p = 1;
+  *q = x;
+
+  // start from max because p and q are likely in the same range ish
+  for (u_int64_t candidate = max; candidate >= 0; candidate--)
+  {
+    if (x % candidate == 0)
+    {
+      // found it!
+      *p = candidate;
+      *q = x / candidate;
+      break;
+    }
+  }
+}
+
+/**
+ * Returns the prime factors for the value x.
+ * Brute force version
+ */
+void get_prime_factors_force_odd(u_int64_t x, u_int64_t *p, u_int64_t *q)
+{
+  u_int64_t max = (u_int64_t)floor(sqrt(x));
+  if (max % 2 == 0)
+    max += 1;
+  *p = 1;
+  *q = x;
+
+  // start from max because p and q are likely in the same range ish
+  for (u_int64_t candidate = max; candidate >= 0; candidate -= 2)
+  {
+    if (x % candidate == 0)
+    {
+      // found it!
+      *p = candidate;
+      *q = x / candidate;
+      break;
     }
   }
 }

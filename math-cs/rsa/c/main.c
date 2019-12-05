@@ -2,6 +2,8 @@
 #include <time.h>
 #include "rsa.h"
 
+#define TESTING_LENGTH 10000
+
 int main()
 {
   uint64_t n = 1190836873;
@@ -61,18 +63,31 @@ int main()
       6952392,
   };
 
-  int length = (sizeof(groups) / sizeof(groups[0]));
+  crack_func functions[] = {
+      crack_groups,
+      crack_groups_force,
+      crack_groups_force_odd};
+
+  int groupsLength = (sizeof(groups) / sizeof(groups[0]));
+  int functionsLength = (sizeof(functions) / sizeof(functions[0]));
+
   clock_t start_t, end_t, total_t;
+  u_int64_t *decoded;
 
-  start_t = clock();
-  u_int64_t *decoded = crack_groups(groups, length, e, n);
-  end_t = clock();
-
-  total_t = (end_t - start_t);
-  printf("Total time taken by CPU: %dμs\n", (int)total_t);
+  for (int i = 0; i < functionsLength; i++)
+  {
+    start_t = clock();
+    for (int j = 0; j < TESTING_LENGTH; j++)
+    {
+      decoded = (*functions[i])(groups, groupsLength, e, n);
+    }
+    end_t = clock();
+    total_t = (end_t - start_t);
+    printf("Total time taken by CPU: %dμs\n", (int)total_t);
+  }
 
   // Print groups as utf-8
-  for (int i = 0; i < length; i++)
-    printf("%s", (char*)&decoded[i]);
+  for (int i = 0; i < groupsLength; i++)
+    printf("%s", (char *)&decoded[i]);
   printf("\n");
 }
