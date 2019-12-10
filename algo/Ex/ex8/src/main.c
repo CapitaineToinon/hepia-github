@@ -21,12 +21,6 @@ int main(int argc, char *argv[])
     strcpy((char *)input, argv[1]);
     gamemode = atoi(input);
 
-    if (gamemode < 1 || gamemode > 3)
-    {
-        help(filename);
-        return -1;
-    }
-
     switch (gamemode) {
         case 1:
             player_vs_player();
@@ -38,6 +32,9 @@ int main(int argc, char *argv[])
         case 3:
             // player vs smart cpu
             player_vs_cpu(true);
+            break;
+        default:
+            help(filename);
             break;
     }
 
