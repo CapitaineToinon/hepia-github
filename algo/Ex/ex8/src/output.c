@@ -3,7 +3,8 @@
 #include "output.h"
 
 /**
- * Converted from https://stackoverflow.com/questions/48677066/printing-a-grid
+ * Converted from a C++ example found here:
+ * https://stackoverflow.com/questions/48677066/printing-a-grid
  */
 void print_board(int **p, int userRows, int userColumns)
 {
@@ -13,7 +14,7 @@ void print_board(int **p, int userRows, int userColumns)
     {
         if (j % 4 == 2)
         {
-            if (get_available_row(p, userRows, i) != -1)
+            if (get_available_row(p, userRows, userColumns, i) != -1)
                 printf("%d", i);
             else
                 printf(" ");
@@ -60,7 +61,7 @@ void print_board(int **p, int userRows, int userColumns)
                             break;
                     }
 
-                    printf(" %c ", c);
+                    printf(" %c ", c); // where we actually print the board in position [i/2][j/2]
                 }
             }
         }
@@ -68,13 +69,23 @@ void print_board(int **p, int userRows, int userColumns)
     }
 }
 
+/**
+ * Print who's the winner
+ */ 
 void print_winner(int winner)
 {
-    if (winner == 1)
-        printf("You won!\n");
-
-    if (winner == 2)
-        printf("The CPU won!\n");
+    switch (winner) {
+        default:
+        case NOONE: 
+            printf("Noone won, seems like it's a tie!\n");
+            break;
+        case PLAYER1: 
+            printf("Player 1 won!\n");
+            break;
+        case PLAYER2: 
+            printf("Player 2 won!\n");
+            break;
+    }
 }
 
 /**

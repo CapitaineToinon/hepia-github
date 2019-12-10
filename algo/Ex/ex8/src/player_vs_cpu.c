@@ -7,6 +7,9 @@ void player_vs_cpu(bool smart)
 {
     int **board;
     bool cpu_smart = smart;
+    bool player1turn = true;
+    bool game_over = false;
+
     int winner = NOONE, columns = 7, rows = 6,
         p_column = 0, p_row = 0;
 
@@ -15,26 +18,29 @@ void player_vs_cpu(bool smart)
 
     do
     {
-        print_board(board, rows, columns);
-
-        // ask the player to chose a column, ask again if column is full
-        do
+        
+        if (player1turn)
         {
-            p_column = get_player_column(1, columns);
-            p_row = get_available_row(board, rows, p_column); // returns -1 if the column is full
-        } while (p_row == -1);
+            print_board(board, rows, columns);
+            // ask the player to chose a column, ask again if column is full
+            do
+            {
+                p_column = get_player_column(1, columns);
+                p_row = get_available_row(board, rows, columns, p_column); // returns -1 if the column is full
+            } while (p_row == -1);
 
-        player_play(board, p_row, p_column);
+            player_play(board, p_row, p_column);
+        }
+        else
+        {
+            cpu_play(board, rows, columns, cpu_smart);
+        }
+
         winner = who_won(board, rows, columns);
-        if (winner != NOONE)
-            continue;
+        game_over = is_game_over(board, rows, columns);
+        player1turn = !player1turn;
 
-        cpu_play(board, rows, columns, cpu_smart);
-        winner = who_won(board, rows, columns);
-        if (winner != NOONE)
-            continue;
-
-    } while (winner == NOONE);
+    } while (winner == NOONE && game_over == false);
 
     print_winner(winner);
     print_board(board, rows, columns);
