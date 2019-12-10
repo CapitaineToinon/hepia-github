@@ -1,3 +1,8 @@
+/**
+ * Author:  Antoine Sutter
+ * Email:   antoinesutter@gmail.com
+ * Github:  CapitaineToinon
+ */ 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -6,6 +11,9 @@
 #include "player_vs_cpu.h"
 #include "player_vs_player.h"
 
+/**
+ * Main code that takes the game mode in argument
+ */
 int main(int argc, char *argv[])
 {
     int gamemode = -1;

@@ -1,8 +1,16 @@
+/**
+ * Author:  Antoine Sutter
+ * Email:   antoinesutter@gmail.com
+ * Github:  CapitaineToinon
+ */ 
 #include "connect_four.h"
 #include "output.h"
 #include "input.h"
 #include "player_vs_player.h"
 
+/**
+ * Starts a new game player vs player
+ */ 
 void player_vs_player()
 {
     int **board;

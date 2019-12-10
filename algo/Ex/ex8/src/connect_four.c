@@ -1,3 +1,8 @@
+/**
+ * Author:  Antoine Sutter
+ * Email:   antoinesutter@gmail.com
+ * Github:  CapitaineToinon
+ */ 
 #include "connect_four.h"
 
 // game over functions
@@ -79,7 +84,7 @@ int get_available_row(int **board, int rows, int columns, int column)
 }
 
 /**
- * Play
+ * Play on the board in row and column
  */
 void play(int **board, int row, int column, int who)
 {
@@ -133,7 +138,7 @@ bool is_game_over(int **board, int rows, int columns)
 }
 
 /**
- * Returns true if a specific candidate has won the game
+ * Returns if a specific candidate has won the game
  */
 static bool has_won(int **board, int rows, int columns, int who)
 {
@@ -141,7 +146,7 @@ static bool has_won(int **board, int rows, int columns, int who)
 }
 
 /**
- * Returns true if candidates are the same
+ * Returns if candidates are the same
  */
 static bool are_same(int who, int *candidates, int length)
 {
@@ -154,7 +159,7 @@ static bool are_same(int who, int *candidates, int length)
 }
 
 /**
- * Returns true candidates are aligned on a row
+ * Returns if candidates are aligned on a row
  */
 static bool check_rows(int **board, int rows, int columns, int who)
 {
@@ -178,7 +183,7 @@ static bool check_rows(int **board, int rows, int columns, int who)
 }
 
 /**
- * Returns true candidates are aligned on a column
+ * Returns if candidates are aligned on a column
  */
 static bool check_columns(int **board, int rows, int columns, int who)
 {
@@ -202,7 +207,7 @@ static bool check_columns(int **board, int rows, int columns, int who)
 }
 
 /**
- * Returns true candidates are aligned on a diagonal
+ * Returns if candidates are aligned on a diagonal
  */
 static bool check_diagonals(int **board, int rows, int columns, int who)
 {
@@ -307,11 +312,11 @@ static bool play_winning_row(int **board, int rows, int columns, int who_to_chec
                 candidates[k] = board[i][j + k]; // swap j + k with i compared to check_columns
 
             if (play_winning_candidates(board, rows, columns, i + 1, j + 1, candidates, who_to_check, who_to_play))
-                return true;
+                return true; // a smart move was done in a row
         }
     }
 
-    return false; // no rows found
+    return false; // no smart move was done
 }
 
 /**
@@ -332,11 +337,11 @@ static bool play_winning_column(int **board, int rows, int columns, int who_to_c
                 candidates[k] = board[j + k][i]; // swap j + k with i compared to check_rows
 
             if (play_winning_candidates(board, rows, columns, j + 1, i + 1, candidates, who_to_check, who_to_play))
-                return true;
+                return true; // a smart move was done in a column
         }
     }
 
-    return false; // no column found
+    return false; // no smart move was done
 }
 
 /**
@@ -357,18 +362,18 @@ static bool play_winning_diagonal(int **board, int rows, int columns, int who_to
                 candidates[k] = board[i + k][j + k];
 
             if (play_winning_candidates(board, rows, columns, i + 1, j + 1, candidates, who_to_check, who_to_play))
-                return true;
+                return true; // a smart move was done in a diagonal
 
             // also check from top right to bottom left
             for (k = 0; k < CONNECT; k++)
                 candidates[k] = board[ii - k][j + k];
 
             if (play_winning_candidates(board, rows, columns, i + 1, j + 1, candidates, who_to_check, who_to_play))
-                return true;
+                return true; // a smart move was done in a diagonal
         }
     }
 
-    return false;
+    return false; // no smart move was done
 }
 
 /**
@@ -390,10 +395,10 @@ static bool play_winning_candidates(int **board, int rows, int columns, int row,
     if (winning_candidate != -1 && winning_row == current_row)
     {
         play(board, winning_row, winning_col, who_to_play);
-        return true;
+        return true; // a smart move was done
     }
 
-    return false;
+    return false; // no smart move was done
 }
 
 /**

@@ -1,4 +1,8 @@
-
+/**
+ * Author:  Antoine Sutter
+ * Email:   antoinesutter@gmail.com
+ * Github:  CapitaineToinon
+ */
 #include "connect_four.h"
 #include "output.h"
 

@@ -1,3 +1,8 @@
+/**
+ * Author:  Antoine Sutter
+ * Email:   antoinesutter@gmail.com
+ * Github:  CapitaineToinon
+ */ 
 #include <stdio.h>
 
 #define PLAYER_CHAR '#'

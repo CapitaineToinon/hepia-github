@@ -1,3 +1,8 @@
+/**
+ * Author:  Antoine Sutter
+ * Email:   antoinesutter@gmail.com
+ * Github:  CapitaineToinon
+ */ 
 #include <stdlib.h>
 #include <stdbool.h>
 #include <time.h>

@@ -1,8 +1,17 @@
+/**
+ * Author:  Antoine Sutter
+ * Email:   antoinesutter@gmail.com
+ * Github:  CapitaineToinon
+ */ 
 #include "connect_four.h"
 #include "output.h"
 #include "input.h"
 #include "player_vs_cpu.h"
 
+/**
+ * Starts a new game player vs cpu.
+ * The cpu can me smart or not (plays randomly or not)
+ */ 
 void player_vs_cpu(bool smart)
 {
     int **board;
