@@ -2,8 +2,6 @@
 #include <time.h>
 #include "rsa.h"
 
-#define TESTING_LENGTH 10000
-
 int main()
 {
   uint64_t n = 1190836873;
@@ -76,11 +74,8 @@ int main()
 
   for (int i = 0; i < functionsLength; i++)
   {
-    start_t = clock();
-    for (int j = 0; j < TESTING_LENGTH; j++)
-    {
-      decoded = (*functions[i])(groups, groupsLength, e, n);
-    }
+    start_t = clock(); 
+    decoded = (*functions[i])(groups, groupsLength, e, n);
     end_t = clock();
     total_t = (end_t - start_t);
     printf("Total time taken by CPU: %dμs\n", (int)total_t);

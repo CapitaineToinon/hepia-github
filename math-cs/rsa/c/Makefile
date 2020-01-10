@@ -10,5 +10,10 @@ build:
 	$(CC) $(OPT) main.c -o main prime.o bezout.o rsa.o
 	rm *.o
 
+benchmark:
+	$(CC) $(OPT) -c prime.c -o prime.o
+	$(CC) $(OPT) benchmark.c -o benchmark prime.o
+	rm *.o
+
 clean: 
-	rm *.o main
+	rm *.o main benchmark
