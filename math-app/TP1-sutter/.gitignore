@@ -1,0 +1,5 @@
+__pycache__
+files
+*.pdf
+OUTPUT/*
+!OUTPUT/.gitkeep
