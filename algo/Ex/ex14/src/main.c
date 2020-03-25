@@ -4,10 +4,12 @@
 #include "helpers.h"
 
 /**
- * This function will
- *  1. generate the successors of the head
- *  2. insert the successors to the queue
- *  3. remove the head from the queue
+ * This function will:
+ *  1. generate the successors of the head;
+ *  2. insert the successors to the queue;
+ *  3. remove the head from the queue.
+ * 
+ * The function won't do anything if the queue is empty.
  */
 void findSuccessors(Queue *queue)
 {
@@ -16,8 +18,7 @@ void findSuccessors(Queue *queue)
         return;
 
     /* get the head but don't remove it yet */
-    int *tab = (int *)malloc(sizeof(int) * TAB_SIZE);
-    tab = first(queue);
+    int *tab = first(queue);
 
     /* size of the matrice */
     int SIZE_X = 3;
@@ -30,53 +31,38 @@ void findSuccessors(Queue *queue)
         {
             int x = i % SIZE_X;
             int y = i / SIZE_Y;
+            const int AMOUNT_DIRECTIONS = 4;
 
-            /* could it go up ? */
-            if (y > 0)
+            /* whether the point can move in a direction or not */
+            bool canDirection[AMOUNT_DIRECTIONS] = {
+                y > 0,              // if it can go up
+                (x < (SIZE_X - 1)), // if it can go right
+                (y < (SIZE_Y - 1)), // if it can go down
+                x > 0,              // if it can go left
+            };
+
+            /* the index of the point it needs to be swapped with */
+            int directionSwapWith[AMOUNT_DIRECTIONS] = {
+                i - SIZE_Y, // the index of the point to swap with if it can go up
+                i + 1,      // the index of the point to swap with if it can go right
+                i + SIZE_Y, // the index of the point to swap with if it can go down
+                i - 1,      // the index of the point to swap with if it can go left
+            };
+
+            for (int dir = 0; dir < AMOUNT_DIRECTIONS; dir++)
             {
-                int *up = (int *)malloc(sizeof(int) * TAB_SIZE);
-                arraycpy(tab, up, TAB_SIZE);
+                if (canDirection[dir])
+                {
+                    /* create the new matrice */
+                    int *newMatrice = (int *)malloc(sizeof(int) * TAB_SIZE);
+                    arraycpy(tab, newMatrice, TAB_SIZE);
 
-                int j = i - SIZE_Y;
-                arrayswap(up, i, j);
+                    /* make the point move in the direction */
+                    arrayswap(newMatrice, i, directionSwapWith[dir]);
 
-                insert(queue, up);
-            }
-
-            /* could it go right ? */
-            if (x < SIZE_X - 1)
-            {
-                int *right = (int *)malloc(sizeof(int) * TAB_SIZE);
-                arraycpy(tab, right, TAB_SIZE);
-
-                int j = i + 1;
-                arrayswap(right, i, j);
-
-                insert(queue, right);
-            }
-
-            /* could it go down ? */
-            if (y < SIZE_Y - 1)
-            {
-                int *down = (int *)malloc(sizeof(int) * TAB_SIZE);
-                arraycpy(tab, down, TAB_SIZE);
-
-                int j = i + SIZE_Y;
-                arrayswap(down, i, j);
-
-                insert(queue, down);
-            }
-
-            /* could it go left ? */
-            if (x > 0)
-            {
-                int *left = (int *)malloc(sizeof(int) * TAB_SIZE);
-                arraycpy(tab, left, TAB_SIZE);
-
-                int j = i - 1;
-                arrayswap(left, i, j);
-
-                insert(queue, left);
+                    /* insert the new matrice */
+                    insert(queue, newMatrice);
+                }
             }
 
             break;
@@ -107,10 +93,11 @@ int main(void)
     /* first example */
     queue = createQueue();
     insert(queue, tab);
-    findSuccessors(queue);
 
     printf("----- Base array -----\n");
     printArray(first(queue), TAB_SIZE);
+    findSuccessors(queue);
+
     printf("Successors length: %d\n", depth(queue));
     printf("----- successors -----\n");
     printQueue(queue->head);
@@ -119,10 +106,11 @@ int main(void)
     /* second example */
     queue = createQueue();
     insert(queue, tab2);
-    findSuccessors(queue);
 
     printf("----- Base array -----\n");
     printArray(first(queue), TAB_SIZE);
+    findSuccessors(queue);
+    
     printf("Successors length: %d\n", depth(queue));
     printf("----- successors -----\n");
     printQueue(queue->head);
