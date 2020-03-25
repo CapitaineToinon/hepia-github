@@ -22,7 +22,7 @@ typedef struct T_queue Queue;
 
 Queue *createQueue();
 void insert(Queue *queue, int tab[TAB_SIZE]);
-bool extract(Queue *queue, int destination[TAB_SIZE]);
-QueueElement *first(Queue *queue);
+void extract(Queue *queue);
+int *first(Queue *queue);
 int depth(Queue *queue);
 bool isEmpty(Queue *queue);

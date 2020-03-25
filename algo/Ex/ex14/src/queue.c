@@ -49,40 +49,33 @@ void insert(Queue *queue, int tab[TAB_SIZE])
     queue->length += 1;
 }
 
-bool extract(Queue *queue, int destination[TAB_SIZE])
+void extract(Queue *queue)
 {
-    bool extracted = false;
-
     if (queue->head != NULL)
     {
-        for (int i = 0; i < TAB_SIZE; i++)
-            destination[i] = queue->head->tab[i];
+        QueueElement *toRemove = queue->head;
 
-        /* Replace the head if possible */
+        /* replace the head if possible */
         if (queue->head->next != NULL)
         {
-            QueueElement *newHead = queue->head->next;
-            free(queue->head);
-            queue->head = newHead;
+            queue->head = queue->head->next;
         }
         else
         {
-            free(queue->head);
             queue->head = NULL;
             queue->tail = NULL;
         }
-
+        
         /* decrease length */
         queue->length -= 1;
-        extracted = true;
+        
+        free(toRemove);
     }
-
-    return extracted;
 }
 
-QueueElement *first(Queue *queue)
+int *first(Queue *queue)
 {
-    return queue->head;
+    return queue->head->tab;
 }
 
 int depth(Queue *queue)
