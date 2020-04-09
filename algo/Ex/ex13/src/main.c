@@ -22,7 +22,7 @@ int main(void)
         // consume newline
         (void)getchar();
 
-        if (c == '!')
+        if (c == END_CHAR)
         {
             break;
         }
