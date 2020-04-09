@@ -16,12 +16,10 @@ Queue *createQueue()
     return queue;
 }
 
-void insert(Queue *queue, int tab[TAB_SIZE])
+void insert(Queue *queue, void *value)
 {
     QueueElement *newElement = _createQueueElement();
-
-    for (int i = 0; i < TAB_SIZE; i++)
-        newElement->tab[i] = tab[i];
+    newElement->value = value;
 
     /**
      * If the tails isn't empty, chain it correctly
@@ -73,9 +71,9 @@ void extract(Queue *queue)
     }
 }
 
-int *first(Queue *queue)
+void *first(Queue *queue)
 {
-    return queue->head->tab;
+    return queue->head->value;
 }
 
 int depth(Queue *queue)

@@ -8,7 +8,7 @@
 
 struct T_queue_element
 {
-    int tab[TAB_SIZE];
+    void *value;
     struct T_queue_element *next;
 };
 
@@ -24,8 +24,8 @@ struct T_queue
 typedef struct T_queue Queue;
 
 Queue *createQueue();
-void insert(Queue *queue, int tab[TAB_SIZE]);
+void insert(Queue *queue, void *value);
 void extract(Queue *queue);
-int *first(Queue *queue);
+void *first(Queue *queue);
 int depth(Queue *queue);
 bool isEmpty(Queue *queue);
