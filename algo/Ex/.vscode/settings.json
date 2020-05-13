@@ -2,6 +2,7 @@
     "files.associations": {
         "helpers.h": "c",
         "__functional_03": "c",
-        "functional": "c"
+        "functional": "c",
+        "hash.h": "c"
     }
 }

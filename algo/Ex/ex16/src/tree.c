@@ -6,7 +6,7 @@ Branch *createBranch()
 {
     Branch *branch = (Branch *)malloc(sizeof(Branch));
     branch->value = (int *)malloc(sizeof(int) * TAB_SIZE);
-    branch->depth = 1;
+    branch->depth = 0;
     branch->root = NULL;
     branch->successors = (Branch **)malloc(sizeof(Branch *) * MAX_SUCCESSORS);
     for (int i = 0; i < MAX_SUCCESSORS; i++)

@@ -1,0 +1,15 @@
+LISTE DES TRAITEMENTS:
+
+message-ex.wav 			message lui-même
+
+message-ex_mirA.wav 		miroir de fréquences autour de 6000Hz sur la première moitié du message
+
+message-ex_shiftA.wav 		linear pitch shift de 4000Hz sur la première moitié du message
+
+message-ex_divA.wav 		diviseur de déphasage par 2 sur la première moitié du message
+
+message-ex_mixA.wav		saute-mouton mélangeur de fréquences entre la première et deuxième moitié du message
+message-ex_mixB.wav		saute-mouton mélangeur de fréquences entre la deuxième et première moitié du message
+
+message-ex_excA.wav		échange amplitude/déphasage entre la première et deuxième moitié du message
+message-ex_excB.wav		échange déphasage/amplitude entre la première et deuxième moitié du message
