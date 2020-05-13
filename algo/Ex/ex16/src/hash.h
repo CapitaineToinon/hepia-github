@@ -2,7 +2,6 @@
 #include "queue.h"
 #include "helpers.h"
 
-
 #define HASH_TABLE_SIZE 10000
 
 typedef Queue **HashTable;

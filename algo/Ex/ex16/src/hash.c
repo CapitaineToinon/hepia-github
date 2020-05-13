@@ -1,7 +1,8 @@
 #include "hash.h"
 
-typedef Queue **HashTable;
-
+/**
+ * Creates a hash table
+ */
 HashTable createHashTable()
 {
     HashTable table = (HashTable)malloc(sizeof(Queue *) * HASH_TABLE_SIZE);
@@ -12,7 +13,9 @@ HashTable createHashTable()
     return table;
 }
 
-/* hash function */
+/** 
+ * hash function
+ */
 int h(int *tab)
 {
     int sum = 0;
@@ -23,6 +26,9 @@ int h(int *tab)
     return sum % HASH_TABLE_SIZE;
 }
 
+/**
+ * Return whether a value is in the hash table or not
+ */
 bool isInTable(HashTable table, int *tab)
 {
     int i = h(tab);
@@ -43,6 +49,9 @@ bool isInTable(HashTable table, int *tab)
     return false;
 }
 
+/**
+ * Add a new value to a given hash table
+ */
 void addToTable(HashTable table, int *value)
 {
     if (isInTable(table, value))
@@ -56,6 +65,9 @@ void addToTable(HashTable table, int *value)
     insert(table[i], value);
 }
 
+/**
+ * Returns the length of a given hash table
+ */
 int tableLength(HashTable table)
 {
     int length = 0;

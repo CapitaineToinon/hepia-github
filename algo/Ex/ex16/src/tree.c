@@ -14,7 +14,11 @@ Branch *createBranch()
     return branch;
 }
 
-/* counts how many successors a branch has */
+/** 
+ * Counts how many successors a branch has.
+ * A branch will always have an array of 4
+ * successors but pointers may be NULL.
+ */
 int countSuccessors(Branch *branch)
 {
     int count = 0;
@@ -26,6 +30,11 @@ int countSuccessors(Branch *branch)
     return count;
 }
 
+/**
+ * Returns the index of a a sucessor in
+ * the array of successors of a given branch.
+ * Returns -1 is not found.
+ */
 int findSuccessorIndex(Branch *branch, int *search)
 {
     for (int i = 0; i < MAX_SUCCESSORS; i++)
