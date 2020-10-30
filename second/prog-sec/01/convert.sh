@@ -57,11 +57,11 @@ mkdir -p "$DEST"
 
 # copy the files
 for f in "$SOURCE"/*; do
-    if [[ $(filetype "$f") == "image" ]]; then
+    if [ "$(filetype "$f")" == "image" ]; then
         filenameOnly=$(basename "$f")
         destFilename=$(renameFile "$filenameOnly")
 
-        if [[ -z $RESOLUTION ]]; then
+        if [ -z "$RESOLUTION" ]; then
             # just copy the file
             cp "$SOURCE/$filenameOnly" "$DEST/$destFilename"
         else
