@@ -3,7 +3,7 @@
 # Antoine Sutter
 # 22 jan 2018
 
-shopt -s -o nounset
+shopt -s -o nounset pipefail errexit
 
 # **************************************** VARIABLES **************************************** #
 
