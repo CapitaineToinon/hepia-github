@@ -3,7 +3,7 @@
 # Antoine Sutter <antoinesutter@gmail.com>
 # Created on 29/10/2020
 
-shopt -s -o nounset pipefail errexit
+shopt -s -o nounset
 
 # remove spaces and quotes from string
 function renameFile {
