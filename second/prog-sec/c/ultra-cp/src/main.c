@@ -21,32 +21,41 @@ int main(int argc, char *argv[])
     {
         char path[PATH_MAX];
         snprintf(path, PATH_MAX, "%s", argv[1]);
+        print_files_info(path);
+    }
+    else if (argc == 3)
+    {
+        char source[PATH_MAX];
+        char destination[PATH_MAX];
+        snprintf(source, PATH_MAX, "%s", argv[1]);
+        snprintf(destination, PATH_MAX, "%s", argv[2]);
 
-        if (is_directory(path))
-            foreach_file(path, &print_file_info);
+        if ((!file_exists(destination) || !is_directory(destination)) && is_directory(source))
+        {
+            fprintf(stderr, "If the destination is a file, you can have only one source and it must be a file too.\n");
+            exit(EXIT_FAILURE);
+        }
+
+        if (is_directory(source))
+        {
+            // Nested function to call copy_file
+            // since the foreach_file callback
+            // only takes one param
+            void call_copy(char *src)
+            {
+                copy_file(src, destination);
+            }
+
+            foreach_file(source, call_copy);
+        }
         else
-            print_file_info(path);
+        {
+            copy_file(source, destination);
+        }
     }
     else
     {
-        char destination[PATH_MAX];
-        snprintf(destination, PATH_MAX, "%s", argv[argc - 1]);
-
-        void call_copy(char *file)
-        {
-            copy_file(file, destination);
-        }
-
-        for (int i = 1; i < argc - 1; i++)
-        {
-            char source[PATH_MAX];
-            snprintf(source, PATH_MAX, "%s", argv[i]);
-
-            if (is_directory(source))
-                foreach_file(source, &call_copy);
-            else
-                call_copy(source);
-        }
+        // todo
     }
 
     return 0;
