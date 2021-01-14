@@ -8,7 +8,7 @@
 bool file_exists(char *);
 bool is_directory(char *);
 bool has_trailing_slash(const char *);
-void copy_file(const char *, char *);
-void foreach_file(const char *, void (*)(char *));
-void print_files_info(char *source);
+void copy_file(const char *, char *, bool, bool);
+void copy_files(const char *, char *, bool, bool);
 void print_file_info(char *);
+void print_files_info(char *source);
