@@ -1,6 +1,5 @@
 #define CURRENT_DIR "."
 #define PARENT_DIR ".."
-#define FORWARD_SLASH '/'
 #define DEFAULT_PERM "----------"
 #define DATE_FORMAT "%a %b %e %H:%M:%S %G"
 #define DATE_SIZE 50
