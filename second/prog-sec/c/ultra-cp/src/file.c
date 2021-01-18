@@ -131,6 +131,12 @@ void copy_file(char *source, char *destination, bool force_perms_copy, bool pres
         exit(EXIT_FAILURE);
     }
 
+    // exit silently if source is not a regular file
+    if (!S_ISREG(source_stat.st_mode))
+    {
+        return;
+    }
+
     // test if the destination is a file or a folder, changes
     // the destination to 'destination/source_basename' if needed
     if (is_directory(_destination))
