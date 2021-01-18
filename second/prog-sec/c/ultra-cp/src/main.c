@@ -11,16 +11,27 @@
 #include <sys/stat.h>
 #include "file.h"
 
+void print_help(FILE *, char *);
+void print_help(FILE *dest, char *filename)
+{
+    fprintf(dest, "Usage: %s [OPTIONS]... [SOURCE] DEST\n", filename);
+    fprintf(dest, "or:    %s [OPTIONS]... SOURCE DEST\n", filename);
+    fprintf(dest, "Copy SOURCE to DEST, or multiple SOURCE(s) to DIRECTORY.\n");
+    fprintf(dest, "-a        Force the copy of permissions.\n");
+    fprintf(dest, "-f        Creates new symbolic links instead of copying the content of the link.\n");
+    fprintf(dest, "-h        Prints this help.\n");
+}
+
 int main(int argc, char *argv[])
 {
-    char *argv_extra[argc - optind];
+    char *argv_extra[argc];
     int argc_extra = 0;
     bool a_flag = false;
     bool f_flag = false;
     int opt;
 
     // Read the program's arguments
-    while ((opt = getopt(argc, argv, ":af")) != -1)
+    while ((opt = getopt(argc, argv, ":afh")) != -1)
     {
         switch (opt)
         {
@@ -30,6 +41,9 @@ int main(int argc, char *argv[])
         case 'f':
             f_flag = true;
             break;
+        case 'h':
+            print_help(stdout, argv[0]);
+            return 0;
         }
     }
 
@@ -43,7 +57,7 @@ int main(int argc, char *argv[])
     if (argc_extra == 0)
     {
         // No arguements provided
-        fprintf(stderr, "Example usage: %s <directory_or_file>\n", argv[0]);
+        print_help(stderr, argv[0]);
         exit(EXIT_FAILURE);
     }
     else if (argc_extra == 1)
@@ -65,19 +79,19 @@ int main(int argc, char *argv[])
         snprintf(source, PATH_MAX, "%s", argv_extra[0]);
         snprintf(destination, PATH_MAX, "%s", argv_extra[1]);
 
-        if ((!file_exists(destination) || !is_directory(destination)) && is_directory(source))
+        if (is_directory(source))
         {
-            fprintf(stderr, "If the destination is a file, you can have only one source and it must be a file too.\n");
-            exit(EXIT_FAILURE);
-        }
+            if (!file_exists(destination) || !is_directory(destination))
+            {
+                fprintf(stderr, "If the destination is a file, you can have only one source and it must be a file too.\n");
+                exit(EXIT_FAILURE);
+            }
 
-        if (!is_directory(source))
-        {
-            copy_file(source, destination, a_flag, f_flag);
+            copy_files(source, destination, a_flag, f_flag);
         }
         else
         {
-            copy_files(source, destination, a_flag, f_flag);
+            copy_file(source, destination, a_flag, f_flag);
         }
     }
     else
@@ -85,7 +99,7 @@ int main(int argc, char *argv[])
         /**
          * With 3 or more arguements, copy files.
          * If the destination doesn't exist OR is a file, then throws an error
-         * If the destination is a directory, then sources can be a file or a directory
+         * Sources can be a file or a directory
          */
         char source[PATH_MAX];
         char destination[PATH_MAX];
@@ -101,13 +115,13 @@ int main(int argc, char *argv[])
         {
             snprintf(source, PATH_MAX, "%s", argv_extra[i]);
 
-            if (!is_directory(source))
+            if (is_directory(source))
             {
-                copy_file(source, destination, a_flag, f_flag);
+                copy_files(source, destination, a_flag, f_flag);
             }
             else
             {
-                copy_files(source, destination, a_flag, f_flag);
+                copy_file(source, destination, a_flag, f_flag);
             }
         }
     }

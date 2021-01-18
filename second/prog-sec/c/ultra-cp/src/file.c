@@ -16,6 +16,8 @@
 
 /**
  * Returns true if the file or directory exists
+ * 
+ * source: path to the file to be tested
  */
 bool file_exists(char *source)
 {
@@ -25,6 +27,8 @@ bool file_exists(char *source)
 
 /**
  * Returns true if the string is the path to an existing directory
+ * 
+ * source: path to the file to be tested
  */
 bool is_directory(char *source)
 {
@@ -34,11 +38,36 @@ bool is_directory(char *source)
 
 /**
  * Returns true if the string ends with a forward slash
+ *
+ * source: path to the file to be tested
  */
 bool has_trailing_slash(const char *source)
 {
     int strLength = strlen(source);
-    return (strLength > 0 && source[strLength - 1] == 47);
+    return (strLength > 0 && source[strLength - 1] == FORWARD_SLASH);
+}
+
+/**
+ * Creates a symlink based on a relative source
+ * 
+ * source: the file source
+ * destination: the file destination
+ */
+int create_absolute_symlink(const char *source, char *destination)
+{
+    char absolute[PATH_MAX];
+
+    if (realpath(source, absolute) == NULL)
+    {
+        fprintf(stderr, "Count not open file lmao suck it %s: %s\n", source, strerror(errno));
+        exit(EXIT_FAILURE);
+        return -1;
+    }
+
+    // pretty print the result
+    printf(COPY_PRINT_FORMAT, source, destination);
+
+    return symlink(absolute, destination);
 }
 
 /**
@@ -48,8 +77,9 @@ bool has_trailing_slash(const char *source)
  * source: the file to be copied
  * destination: the file destination or a directory the source file will be copied to
  * force_perms_copy: force to copy the permissions of the source to the destination
+ * preserve_links: creates a new symlink instead of copying the content of a symlink
  */
-void copy_file(const char *source, char *destination, bool force_perms_copy, bool copy_links)
+void copy_file(const char *source, char *destination, bool force_perms_copy, bool preserve_links)
 {
     int fd_src;
     int fd_dest;
@@ -70,7 +100,8 @@ void copy_file(const char *source, char *destination, bool force_perms_copy, boo
         exit(EXIT_FAILURE);
     }
 
-    if (stat(source, &source_stat) != 0)
+    // need lstat here for potential symlink
+    if (lstat(source, &source_stat) != 0)
     {
         close(fd_src);
         fprintf(stderr, "Count not open file %s: %s\n", source, strerror(errno));
@@ -89,7 +120,21 @@ void copy_file(const char *source, char *destination, bool force_perms_copy, boo
         snprintf(_destination, PATH_MAX, "%s", tmp);
     }
 
-    // open or create the destination
+    if (preserve_links && S_ISLNK(source_stat.st_mode))
+    {
+        close(fd_src);
+
+        // Preserve links and exit early
+        if (create_absolute_symlink(source, _destination) != 0)
+        {
+            fprintf(stderr, "Count not create symlink from %s: %s\n", source, strerror(errno));
+            exit(EXIT_FAILURE);
+        }
+
+        return;
+    }
+
+    // open or create the destination, will fix the perms later in the function
     if ((fd_dest = open(_destination, O_WRONLY | O_EXCL, 0600)) < 0)
     {
         // file doesn't exist so we create it
@@ -145,7 +190,7 @@ void copy_file(const char *source, char *destination, bool force_perms_copy, boo
     }
 
     // pretty print the result
-    printf("%s -> %s\n", source, _destination);
+    printf(COPY_PRINT_FORMAT, source, _destination);
 
     close(fd_src);
     close(fd_dest);
@@ -160,8 +205,9 @@ void copy_file(const char *source, char *destination, bool force_perms_copy, boo
  * source: the source directory containing the files that will be copied over
  * destination: the destination directory the source files will be copied to
  * force_perms_copy: force to copy the permissions of the source to the destination
+ * preserve_links: creates a new symlink instead of copying the content of a symlink
  */
-void copy_files(const char *source, char *destination, bool force_perms_copy, bool copy_links)
+void copy_files(const char *source, char *destination, bool force_perms_copy, bool preserve_links)
 {
     struct dirent *entry;
     DIR *dir = opendir(source);
@@ -186,6 +232,7 @@ void copy_files(const char *source, char *destination, bool force_perms_copy, bo
 
         if (entry->d_type & DT_DIR)
         {
+            // we need to make sure destination sub folder exists before copying files
             struct stat source_directory;
 
             if (stat(source_full_path, &source_directory) != 0)
@@ -195,12 +242,13 @@ void copy_files(const char *source, char *destination, bool force_perms_copy, bo
                 exit(EXIT_FAILURE);
             }
 
+            // create and call recusrively
             mkdir(destin_full_path, source_directory.st_mode);
-            copy_files(source_full_path, destin_full_path, force_perms_copy, copy_links);
+            copy_files(source_full_path, destin_full_path, force_perms_copy, preserve_links);
         }
         else
         {
-            copy_file(source_full_path, destin_full_path, force_perms_copy, copy_links);
+            copy_file(source_full_path, destin_full_path, force_perms_copy, preserve_links);
         }
     }
 
@@ -209,6 +257,8 @@ void copy_files(const char *source, char *destination, bool force_perms_copy, bo
 
 /**
  * Calls print_file_info for a single file or for each files in a directory
+ * 
+ * source: path to the file or directory
  */
 void print_files_info(char *dir_name)
 {
@@ -254,15 +304,17 @@ void print_files_info(char *dir_name)
  * 
  * Example:
  *  drwxrwxrw        128 Thu Jan  7 14:50:21 2021 ./hello
+ * 
+ * source: path to the file to be tested
  */
-void print_file_info(char *file)
+void print_file_info(char *source)
 {
     struct stat ret;
     long int size = 0;
     char time[DATE_SIZE];
     char stats[] = DEFAULT_PERM;
 
-    if (stat(file, &ret) != -1)
+    if (stat(source, &ret) != -1)
     {
         size = ret.st_size;
         strftime(time, DATE_SIZE, DATE_FORMAT, localtime(&ret.st_mtime));
@@ -278,11 +330,11 @@ void print_file_info(char *file)
                  (ret.st_mode & S_IROTH) ? "w" : "-",
                  (ret.st_mode & S_IROTH) ? "x" : "-");
 
-        printf("%10s %10ld %10s %s\n", stats, size, time, file);
+        printf("%10s %10ld %10s %s\n", stats, size, time, source);
     }
     else
     {
-        fprintf(stderr, "Count not open file %s: %s\n", file, strerror(errno));
+        fprintf(stderr, "Count not open file %s: %s\n", source, strerror(errno));
         exit(EXIT_FAILURE);
     }
 }
