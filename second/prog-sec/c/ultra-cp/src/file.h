@@ -8,9 +8,10 @@
 
 bool file_exists(char *);
 bool is_directory(char *);
-bool has_trailing_slash(const char *);
-int create_absolute_symlink(const char *, char *);
-void copy_file(const char *, char *, bool, bool);
-void copy_files(const char *, char *, bool, bool);
+bool has_trailing_slash(char *);
+bool directory_contains(const char *, const char *);
+int create_absolute_symlink(char *, char *);
+void copy_file(char *, char *, bool, bool);
+void copy_files(char *, char *, bool, bool);
 void print_file_info(char *);
 void print_files_info(char *source);

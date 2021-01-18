@@ -41,10 +41,36 @@ bool is_directory(char *source)
  *
  * source: path to the file to be tested
  */
-bool has_trailing_slash(const char *source)
+bool has_trailing_slash(char *source)
 {
     int strLength = strlen(source);
     return (strLength > 0 && source[strLength - 1] == FORWARD_SLASH);
+}
+
+/**
+ * Returns true if a directory contains another file or directory
+ * 
+ * candidate_parent: path to the source directory
+ * candidate_child: path to the target file or directory
+ */
+bool directory_contains(const char *candidate_parent, const char *candidate_child)
+{
+    char real_cp[PATH_MAX];
+    char real_cc[PATH_MAX];
+
+    if (realpath(candidate_parent, real_cp) == NULL)
+    {
+        fprintf(stderr, "Count not open file %s: %s\n", candidate_parent, strerror(errno));
+        exit(EXIT_FAILURE);
+    }
+
+    if (realpath(candidate_child, real_cc) == NULL)
+    {
+        fprintf(stderr, "Count not open file %s: %s\n", candidate_child, strerror(errno));
+        exit(EXIT_FAILURE);
+    }
+
+    return (strstr(real_cc, real_cp) != NULL);
 }
 
 /**
@@ -53,19 +79,16 @@ bool has_trailing_slash(const char *source)
  * source: the file source
  * destination: the file destination
  */
-int create_absolute_symlink(const char *source, char *destination)
+int create_absolute_symlink(char *source, char *destination)
 {
     char absolute[PATH_MAX];
 
     if (realpath(source, absolute) == NULL)
     {
-        fprintf(stderr, "Count not open file lmao suck it %s: %s\n", source, strerror(errno));
+        fprintf(stderr, "Count not open file %s: %s\n", source, strerror(errno));
         exit(EXIT_FAILURE);
         return -1;
     }
-
-    // pretty print the result
-    printf(COPY_PRINT_FORMAT, source, destination);
 
     return symlink(absolute, destination);
 }
@@ -79,7 +102,7 @@ int create_absolute_symlink(const char *source, char *destination)
  * force_perms_copy: force to copy the permissions of the source to the destination
  * preserve_links: creates a new symlink instead of copying the content of a symlink
  */
-void copy_file(const char *source, char *destination, bool force_perms_copy, bool preserve_links)
+void copy_file(char *source, char *destination, bool force_perms_copy, bool preserve_links)
 {
     int fd_src;
     int fd_dest;
@@ -130,6 +153,9 @@ void copy_file(const char *source, char *destination, bool force_perms_copy, boo
             fprintf(stderr, "Count not create symlink from %s: %s\n", source, strerror(errno));
             exit(EXIT_FAILURE);
         }
+
+        // pretty print the result
+        printf(COPY_PRINT_FORMAT, source, _destination);
 
         return;
     }
@@ -207,14 +233,21 @@ void copy_file(const char *source, char *destination, bool force_perms_copy, boo
  * force_perms_copy: force to copy the permissions of the source to the destination
  * preserve_links: creates a new symlink instead of copying the content of a symlink
  */
-void copy_files(const char *source, char *destination, bool force_perms_copy, bool preserve_links)
+void copy_files(char *source, char *destination, bool force_perms_copy, bool preserve_links)
 {
     struct dirent *entry;
-    DIR *dir = opendir(source);
+    DIR *dir;
     char *source_next_path_format = has_trailing_slash(source) ? "%s%s" : "%s/%s";
     char *destin_next_path_format = has_trailing_slash(destination) ? "%s%s" : "%s/%s";
 
-    if (dir == NULL)
+    // check for potential recursive problems
+    if (directory_contains(source, destination))
+    {
+        fprintf(stderr, "You cannot copy directory to a sub directory of itself.\n");
+        exit(EXIT_FAILURE);
+    }
+
+    if ((dir = opendir(source)) == NULL)
     {
         fprintf(stderr, "Count not open directory %s: %s\n", source, strerror(errno));
         exit(EXIT_FAILURE);

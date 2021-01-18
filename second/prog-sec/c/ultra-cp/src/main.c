@@ -63,9 +63,7 @@ int main(int argc, char *argv[])
     else if (argc_extra == 1)
     {
         // Only one arguement, simple list the files
-        char path[PATH_MAX];
-        snprintf(path, PATH_MAX, "%s", argv_extra[0]);
-        print_files_info(path);
+        print_files_info(argv_extra[0]);
     }
     else if (argc_extra == 2)
     {
@@ -111,6 +109,19 @@ int main(int argc, char *argv[])
             exit(EXIT_FAILURE);
         }
 
+        // check for potential recursive issues before copying anything
+        for (int i = 0; i < argc_extra - 1; i++)
+        {
+            snprintf(source, PATH_MAX, "%s", argv_extra[i]);
+
+            if (is_directory(source) && directory_contains(source, destination))
+            {
+                fprintf(stderr, "You cannot copy directory to a sub directory of itself. Nothing was copied.\n");
+                exit(EXIT_FAILURE);
+            }
+        }
+
+        // calls the copy for files and directories
         for (int i = 0; i < argc_extra - 1; i++)
         {
             snprintf(source, PATH_MAX, "%s", argv_extra[i]);
