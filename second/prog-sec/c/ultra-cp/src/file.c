@@ -363,11 +363,11 @@ void print_file_info(char *source)
                  (ret.st_mode & S_IWUSR) ? "w" : "-",
                  (ret.st_mode & S_IXUSR) ? "x" : "-",
                  (ret.st_mode & S_IRGRP) ? "r" : "-",
-                 (ret.st_mode & S_IRGRP) ? "w" : "-",
-                 (ret.st_mode & S_IRGRP) ? "x" : "-",
+                 (ret.st_mode & S_IWGRP) ? "w" : "-",
+                 (ret.st_mode & S_IXGRP) ? "x" : "-",
                  (ret.st_mode & S_IROTH) ? "r" : "-",
-                 (ret.st_mode & S_IROTH) ? "w" : "-",
-                 (ret.st_mode & S_IROTH) ? "x" : "-");
+                 (ret.st_mode & S_IWOTH) ? "w" : "-",
+                 (ret.st_mode & S_IXOTH) ? "x" : "-");
 
         printf("%10s %10ld %10s %s\n", stats, size, time, source);
     }
