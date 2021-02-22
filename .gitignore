@@ -1,6 +1,2 @@
 .DS_Store
 *.zip
-
-# nested git project, ignore for now
-./second/poo2020
-./second/maths
