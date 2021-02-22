@@ -1,0 +1,1 @@
+Il faut redefinir le hashcode quand la fonction equal est definie afin que si deux objets soit equals, qu'ils ne soit également pas a double, par exemple dans une liste HashList.

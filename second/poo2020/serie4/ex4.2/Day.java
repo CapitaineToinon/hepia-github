@@ -1,0 +1,13 @@
+public enum Day {
+    Monday(1), Thuesday(2), Wednesday(3), Thursday(4), Friday(5), Saturday(6), Sunday(7);
+
+    private final int dayOfTheWeek;
+
+    private Day(int dayOfTheWeek) {
+        this.dayOfTheWeek = dayOfTheWeek;
+    }
+
+    public int dayOfTheWeek() {
+        return this.dayOfTheWeek;
+    }
+}

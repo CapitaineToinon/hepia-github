@@ -1,0 +1,317 @@
+/**************************************************************************
+ * Test intermédiaire 1 - groupe soir
+ * @author: Sutter Antoine
+ *
+ * ~ Travail individuel (30% de la note finale) ~
+ *
+ * Remarques
+ * Un oral viendra probablement valider votre note finale
+ *
+ * Avertissement
+ * La fraude, participation ou la tentative de fraude, de même que le 
+ * plagiat peut entraîner l'échec du module et peut faire l'objet de 
+ * sanctions disciplinaires.
+ *
+ * Consignes importantes (= pénalités importantes)
+ * 1. restez connecté sur Discord durant toute la durée du test
+ * 2. indiquez votre nom suivi de votre prénom à la troisième ligne
+ * 3. répondez directement sur ce document
+ * 4. réalisez le maximum de commit 
+ *   - environ un commit par fonctionnalité. Minimum de 3-4 commits par
+ *     exercice.
+ * 5. déposez ce document dans votre repo poo2020exercices/test1/Test1b.txt
+ *   - dès que ce document y est déposé, réalisé votre premier commit/push
+ *     et vérifiez rapidement le succès de l'opération.
+ *   - votre dernier commit doit s'appeler "version finale"
+ * ************************************************************************/
+
+
+
+
+
+
+/* ************************************************************************
+ * Ex 1 - (15 pts)
+ * La classe `Smurf` comporte plusieurs petites erreurs ou mauvaises
+ * pratiques (env. cinq)
+ * 1. corrigez-les 
+ * 2. complétez ensuite le code pour que l'extrait ci-dessous puisse
+ * fonctionner correctement.
+ * ************************************************************************/
+
+// extrait -----------------------------------------------------------------
+Smurf s1 = new Smurf("Schtroumpfette");
+System.out.println( s1 ); // ==> affiche: Smurf@4b9af9a9
+                          // TODO: devrait affichier: Smurf(SCHTROUMPFETTE)
+Smurf s2 = new Smurf("Grognon");
+List<Smurf> smurfs = List.of(s1, s2);
+smurfs.contains( new Smurf("Grognon") ); // ==> false !!!
+                                         // TODO: aurait du retourner true
+// -------------------------------------------------------------------------
+
+
+// à compléter -------------------------------------------------------------
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+
+public class Smurf {
+    public List<Smurf> friends;
+    String name;
+
+    public Smurf(String name) {
+        this.friends = new ArrayList<>();
+        this.name = name;
+    }
+
+    public void addFriend(Smurf friend) {
+        this.friends.add(friend);
+    }
+
+    public int nbFriends() {
+        return this.friends.size();
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(this.name, this.friends);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o)
+            return true;
+
+        if (o == null || o.getClass() != this.getClass())
+            return false;
+
+        Smurf that = (Smurf) o;
+        return this.friends.equals(that.friends) && this.name.equals(that.name);
+    }
+
+    @Override
+    public String toString() {
+        return String.format("Smurf(%s)", this.name.toUpperCase());
+    }
+}
+// -------------------------------------------------------------------------
+
+
+
+/* ************************************************************************
+ * Ex 2 - (10 pts)
+ * Nous souhaitons réaliser un jeu où différent types de personnage 
+ * (appelé Agent) coopèrent pour réaliser des tâches.
+ * Deux interfaces sont à compléter. Nous souhaitons réduire la duplication
+ * du code en réalisant les méthodes par défaut.
+ * Ne complétez donc que celles-ci !
+ * ************************************************************************/
+import java.util.List;
+import Task; // custom class
+
+// à compléter -------------------------------------------------------------
+interface Agent {
+
+    boolean isSleeping();
+
+    // un agent travaille lorsqu'il ne dort pas et qu'il a au moins une tâche
+    // à réaliser
+    default boolean isWorking() {
+        return !isSleeping() && nbTasksToComplete() > 0;
+    }
+
+    /*
+     * réveil un agent. Lève une exception si l'agent est déjà en train de
+     * travailler !
+     */
+    void wakeUp();
+
+    // retourne le nombre de tâches que l'agent doit encore réaliser
+    default int nbTasksToComplete() {
+        return currentTasksToComplete().size();
+    }
+
+    // retourne la liste des tâches que l'agent doit encore réaliser
+    List<Task> currentTasksToComplete();
+}
+import java.util.List;
+
+interface AgentManager {
+
+    // retourne tous les agents
+    List<Agent> allAgents();
+
+    // réveil tous les agents qui dorment et qui ont une seule tâche à réaliser
+    default void wakeUpSleepingAndBusyAgents() {
+        for (Agent agent : allAgents())
+            if (agent.isSleeping() && agent.nbTasksToComplete() == 1)
+                agent.wakeUp();
+    }
+}
+// -------------------------------------------------------------------------
+
+
+/* ************************************************************************
+ * Ex 3 - (30 pts)
+ * Vous devez réaliser une structure de données qui représente le 
+ * chargement d'un convoi ferroviaire. A chaque chargement, calculé en 
+ * tonnage, nous cherchons un wagon qui peut contenir celui-ci. Si aucun 
+ * wagon ne peut accepter le chargement, un nouveau wagon est ajouté au convoi.
+ *
+ * Lors de la création d'un convoi, représenter par un train, nous informons
+ * la capacité maximale de chaque wagon.
+ * Réalisez la classe `Train` pour que le code ci-dessous s'exécute 
+ * correctement.
+ *
+ * N'exposez publiquement que les fonctionnalités visibles dans l'extrait 
+ * du code ci-dessous. Rien de plus !!
+ * En outre, inutile de redéfinir les méthodes de comparaison.
+ *
+ * A côté de chaque instruction, l'état du train avec ses wagons est
+ * représenté à titre indicatif. 
+ * Ex: Train([2,2,1]) indique que le convoi à trois wagons
+ * avec des chargements respectifs de 2 tonnes, 2 tonnes et 1 tonne.
+ * ************************************************************************/
+
+// extrait -----------------------------------------------------------------
+// Construit un train dont les wagons ont une capacité max de 10 tonnes
+Train train = Train.withCapacity(10); // Train([])
+
+// Ajoute du chargement
+train.insert(3); // Train([3])
+train.insert(3); // Train([6])
+train.insert(3); // Train([9])
+train.insert(3); // Train([9, 3]) ; plus de place dans le premier wagon, ajout d'un second
+train.insert(2); // Train([9, 5])
+train.insert(1); // Train([10, 5])
+train.insert(8); // Train([10, 5, 8])
+
+System.out.println( train ); // affiche: Train([10, 5, 8])
+int nb = train.nbWagons(); // nb = 3
+int totalWeight = train.totalWeight(); // totalWeight = 23
+
+train.insert(15); // lève une exception ! 15 est plus grand que la capacité d'un wagon (10)
+// -------------------------------------------------------------------------
+
+
+// à compléter -------------------------------------------------------------
+import java.util.ArrayList;
+import java.util.List;
+
+public class Train {
+    private int capacity;
+    private List<Integer> wagons;
+
+    private Train(int capacity) {
+        this.capacity = capacity;
+        this.wagons = new ArrayList<>();
+    }
+
+    public void insert(int quantity) {
+        if (quantity > this.capacity)
+            throw new RuntimeException("The quantity is bigger than the capacity of a single wagon.");
+
+        if (this.wagons.isEmpty()) {
+            this.wagons.add(quantity);
+            return;
+        }
+
+        for (int i = 0; i < this.wagons.size(); i++) {
+            int quantityLast = this.wagons.get(i);
+
+            if (quantityLast + quantity <= capacity) {
+                this.wagons.set(i, quantityLast + quantity);
+                return;
+            }
+        }
+
+        // needs to add a new wagon
+        this.wagons.add(quantity);
+    }
+
+    public int nbWagons() {
+        return this.wagons.size();
+    }
+
+    public int totalWeight() {
+        return this.wagons.stream().reduce(0, Integer::sum);
+    }
+
+    @Override
+    public String toString() {
+        return String.format("Train(%s)", this.wagons.toString());
+    }
+
+    public static Train withCapacity(int capacity) {
+        return new Train(capacity);
+    }
+}
+
+// -------------------------------------------------------------------------
+
+
+
+
+/* ************************************************************************
+ * Ex 4 - (15 pts)
+ * Réalisez le code minimaliste pour que l'extrait ci-dessous fonctionne.
+ * Inutile de redéfinir les méthodes de Object (toString, equals...)
+ * 
+ * Une référence de type MaybeString a deux états. Soit il contient un String 
+ * et il est possible de le récupérer. Soit il ne contient rien et il
+ * ne devrait donc pas être possible de récupérer une valeur.
+ * ************************************************************************/
+
+
+
+// extrait -----------------------------------------------------------------
+MaybeString m1 = new Something("hello"); 
+MaybeString m2 = new Nothing(); 
+if (m1.exists()) { // ==> true car m1 référence quelquechose qui contient "hello"
+    String greeting = m1.get(); // ==> greeting = "hello"
+} else {
+    System.out.println("m1 n'a aucune valeur");
+}
+System.out.println( m2.exists() ); // ==> affiche `false`
+
+String badCall = m2.get(); // ==> lève une exception ! il n'y a rien à récupérer...
+// -------------------------------------------------------------------------
+
+// à compléter -------------------------------------------------------------
+public interface MaybeString {
+    default public String get() {
+        throw new RuntimeException("There is nothing to get.");
+    }
+
+    default public boolean exists() {
+        return false;
+    }
+}
+
+public class Something implements MaybeString {
+    private String value;
+
+    public Something(String value) {
+        if (value == null)
+            throw new RuntimeException("Value cannot be null");
+
+        this.value = value;
+    }
+
+    @Override
+    public boolean exists() {
+        return true;
+    }
+
+    @Override
+    public String get() {
+        return value;
+    }
+}
+
+public class Nothing implements MaybeString {
+
+}
+// -------------------------------------------------------------------------
+
+// I'm done!
