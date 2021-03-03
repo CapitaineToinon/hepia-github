@@ -14,9 +14,15 @@ int main()
 {
     pthread_t threads[NUM_THREADS];
 
+    int ids[NUM_THREADS];
     for (int i = 0; i < NUM_THREADS; i++)
     {
-        if (pthread_create(&threads[i], NULL, thread, &i) != 0)
+        ids[i] = i;
+    }
+
+    for (int i = 0; i < NUM_THREADS; i++)
+    {
+        if (pthread_create(&threads[i], NULL, thread, &ids[i]) != 0)
         {
             fprintf(stderr, "pthread_create failed!\n");
             return EXIT_FAILURE;
