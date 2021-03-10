@@ -1,35 +1,9 @@
-#include <string.h>
-#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
 #include <pthread.h>
-
-struct sum_args_t
-{
-    int *numbers;
-    int count;
-    int total;
-};
-
-typedef struct sum_args_t SumArgs;
-
-SumArgs *create_sum_arguments()
-{
-    SumArgs *argument = (SumArgs *)malloc(sizeof(SumArgs));
-    argument->count = 0;
-    argument->total = 0;
-    return argument;
-}
-
-void free_sum_argement(SumArgs *argument)
-{
-    if (argument != NULL)
-    {
-        free(argument->numbers);
-        free(argument);
-    }
-}
+#include "helper.h"
+#include "sum.h"
 
 void *process_sum(void *vargs)
 {
@@ -42,38 +16,22 @@ void *process_sum(void *vargs)
         exit(EXIT_FAILURE);
     }
 
-    for (int i = 0; i < args->total; i++)
-        sum += args->numbers[i];
+    #ifdef DEBUG
+    pthread_t id = pthread_self();
+    printf("Thread %ld is adding numbers from %d to %d\n", id, args->from, args->from + args->delta);
+    #endif
+
+    for (int i = args->from; i < args->from + args->delta; i++)
+        sum += i;
 
     return (void *)sum;
-}
-
-int stringtoi(const char *__str)
-{
-    errno = 0;
-    char *endptr;
-    int value = (int)strtol(__str, &endptr, 0);
-
-    if (errno != 0)
-    {
-        fprintf(stderr, "Error trying to convert argument to number: %s\n", strerror(errno));
-        exit(EXIT_FAILURE);
-    }
-
-    if (__str == endptr)
-    {
-        fprintf(stderr, "Error trying to convert argument to number '%s'\n", __str);
-        exit(EXIT_FAILURE);
-    }
-
-    return value;
 }
 
 int main(int argc, char *argv[])
 {
     if (argc != 3)
     {
-        fprintf(stderr, "todo print help here\n");
+        fprintf(stderr, "usage: %s <numbers_to_add> <amount_of_threads>\n", argv[0]);
         exit(EXIT_FAILURE);
     }
 
@@ -96,47 +54,36 @@ int main(int argc, char *argv[])
     if (m > n)
         m = n;
 
-    // create all arguments for each thread
+    #ifdef DEBUG
+    printf("n: %d, m: %d\n", n, m);
+    #endif
+
+    int delta = n / m; // how many numbers each thread will add together
     SumArgs **arguments = (SumArgs **)malloc(m * sizeof(SumArgs *));
-    for (int thread_id = 0; thread_id < m; thread_id++)
-    {
-        arguments[thread_id] = create_sum_arguments();
-    }
-
-    // count how many numbers each thread will have to add
-    for (int i = 1; i <= n; i++)
-    {
-        int thread_id = i % m;
-        arguments[thread_id]->total += 1;
-    }
-
-    // malloc numbers for each threads
-    for (int thread_id = 0; thread_id < m; thread_id++)
-    {
-        arguments[thread_id]->numbers = (int *)malloc(arguments[thread_id]->total * sizeof(int));
-    }
-
-    // add all the numbers
-    for (int i = 1, j = 0; i <= n; i++, j++)
-    {
-        int thread_id = j % m;
-        arguments[thread_id]->numbers[arguments[thread_id]->count] = i;
-        arguments[thread_id]->count++;
-    }
-
-    // call the threads
     pthread_t threads_ids[m];
     intptr_t total_sum = 0;
 
-    for (int i = 0; i < m; i++)
+    for (int thread = 0; thread < m; thread++)
     {
-        if (pthread_create(&threads_ids[i], NULL, &process_sum, arguments[i]) != 0)
+        arguments[thread] = create_sum_arguments();
+        arguments[thread]->from = (thread * delta) + 1;
+        arguments[thread]->delta = delta;
+    }
+
+    // Adding remaining numbers to the last thread
+    arguments[m - 1]->delta += n % m;
+
+    // call the threads
+    for (int thread = 0; thread < m; thread++)
+    {
+        if (pthread_create(&threads_ids[thread], NULL, &process_sum, arguments[thread]) != 0)
         {
             fprintf(stderr, "Error with pthread_create: %s\n", strerror(errno));
             exit(EXIT_FAILURE);
         }
     }
 
+    // join the threads
     for (int i = 0; i < m; i++)
     {
         void *local_sum = 0;
@@ -155,9 +102,9 @@ int main(int argc, char *argv[])
 
     for (int i = 0; i < m; i++)
     {
-        free_sum_argement(arguments[i]);
+        free(arguments[i]);
     }
-    
+
     free(arguments);
 
     return 0;

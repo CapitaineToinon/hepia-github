@@ -6,10 +6,13 @@ LIB=-lpthread
 SOURCE=.
 OUTPUT=bin
 
-default: build
+main: init
+	$(CC) $(DEBUG) $(OPTIONS) -c $(SOURCE)/helper.c -o $(OUTPUT)/helper.o
+	$(CC) $(DEBUG) $(OPTIONS) -c $(SOURCE)/sum.c -o $(OUTPUT)/sum.o
+	$(CC) $(DEBUG) $(OPTIONS) $(SOURCE)/main.c -o $(OUTPUT)/main $(OUTPUT)/helper.o $(OUTPUT)/sum.o $(LIB)
 
-build: init
-	$(CC) $(OPTIONS) $(SOURCE)/main.c -o $(OUTPUT)/main $(LIB)
+debug: DEBUG = -DDEBUG
+debug: main
 
 init:
 	mkdir -p bin
