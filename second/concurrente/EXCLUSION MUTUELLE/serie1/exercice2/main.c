@@ -6,40 +6,33 @@
 #include <string.h>
 #include <unistd.h>
 
-typedef struct mutex_t
-{
-    bool locked;
-} Mutex;
+volatile bool mutex;
 
-Mutex *create_mutex()
+void init_lock(volatile bool *lock)
 {
-    Mutex *m = (Mutex *)malloc(sizeof(Mutex *));
-    m->locked = false;
-    return m;
+    *lock = false;
 }
 
-Mutex *mutex;
-
-void aquire_lock(Mutex *lock)
+void aquire_lock(volatile bool *lock)
 {
-    while (lock->locked == true)
+    while (*lock == true)
     {
         sleep(0);
     }
 
-    while (lock->locked == false)
+    while (*lock == false)
     {
-        (void)__sync_val_compare_and_swap(&lock->locked, false, true);
+        (void)__sync_val_compare_and_swap(lock, false, true);
     }
 
     printf("LOCKED!\n");
 }
 
-void release_lock(Mutex *lock)
+void release_lock(volatile bool *lock)
 {
-    while (lock->locked == true)
+    while (*lock == true)
     {
-        (void)__sync_val_compare_and_swap(&lock->locked, true, false);
+        (void)__sync_val_compare_and_swap(lock, true, false);
     }
 
     printf("UNLOCKED!\n");
@@ -47,14 +40,14 @@ void release_lock(Mutex *lock)
 
 void *thread_sum(void *vargs)
 {
+    aquire_lock(&mutex);
     int *total = (int *)vargs;
-    aquire_lock(mutex);
 
     // takes a lot of clock cylces
     for (int i = 0; i < 10000000; i++)
         *total += 1;
 
-    release_lock(mutex);
+    release_lock(&mutex);
     return NULL;
 }
 
@@ -63,7 +56,7 @@ int main()
     int total = 0;
     int threads_counts = 10;
     pthread_t threads[threads_counts];
-    mutex = create_mutex();
+    init_lock(&mutex);
 
     // call the threads
     for (int thread = 0; thread < threads_counts; thread++)
@@ -72,7 +65,6 @@ int main()
         {
             fprintf(stderr, "Error with pthread_create: %s\n", strerror(errno));
             exit(EXIT_FAILURE);
-            return EXIT_FAILURE;
         }
     }
 
@@ -83,11 +75,9 @@ int main()
         {
             fprintf(stderr, "Error with pthread_join: %s\n", strerror(errno));
             exit(EXIT_FAILURE);
-            return EXIT_FAILURE;
         }
     }
 
     printf("Total count: %d\n", total);
-    free(mutex);
     return 0;
 }

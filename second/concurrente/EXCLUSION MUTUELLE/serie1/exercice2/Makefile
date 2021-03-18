@@ -12,7 +12,7 @@ build: init
 	$(CC) $(DEBUG) $(OPTIONS) $(SOURCE)/main.c -o $(OUTPUT)/main $(LIB)
 
 debug: DEBUG = -DDEBUG
-debug: main
+debug: build
 
 init:
 	mkdir -p bin
