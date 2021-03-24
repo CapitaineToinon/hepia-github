@@ -9,7 +9,6 @@
 #include "ker.h"
 #include "args.h"
 
-pixel_t get_value_img(img_t *img, int x, int y);
 void linear_ker_segment(img_t *img, ker_t *kernel, int size, int offset, img_t *result);
 ker_t *alloc_blur(int size);
 
@@ -62,10 +61,18 @@ void linear_ker_segment(img_t *img, ker_t *kernel, int size, int offset, img_t *
         {
             int kernel_x = kernel_i % kernel->size;
             int kernel_y = kernel_i / kernel->size;
-            int target_x = x + kernel_x - half;
-            int target_y = y + kernel_y - half;
 
-            pixel_t current_p = get_value_img(img, target_x, target_y);
+            // get pixel value
+            int target_x = (x + kernel_x - half) % img->width;
+            int target_y = (y + kernel_y - half) % img->height;
+
+            if (target_x < 0)
+                target_x = img->width - abs(target_x);
+
+            if (target_y < 0)
+                target_y = img->height - abs(target_y);
+
+            pixel_t current_p = img->data[(img->width * target_y) + target_x];
 
             r += current_p.r * kernel->data[kernel_i];
             g += current_p.g * kernel->data[kernel_i];
@@ -89,26 +96,6 @@ img_t *linear_ker(img_t *img, ker_t *kernel)
     return result;
 }
 
-pixel_t get_value_img(img_t *img, int x, int y)
-{
-    int newX = x % img->width;
-    int newY = y % img->height;
-
-    if (newX < 0)
-    {
-        // ex : -2 -> img->width - 2
-        newX = img->width - abs(newX);
-    }
-
-    if (newY < 0)
-    {
-        // ex : -2 -> img->height - 2
-        newY = img->height - abs(newY);
-    }
-
-    return img->data[(img->width * newY) + newX];
-}
-
 int main(int argc, char *argv[])
 {
     // @TODO change this
@@ -126,7 +113,7 @@ int main(int argc, char *argv[])
     char *input = argv[1];
     img_t *img = load_ppm(input);
     img_t *result = alloc_img(img->width, img->height);
-    ker_t *blur = alloc_blur(3);
+    ker_t *blur = alloc_blur(5);
 
     printf("width %d and height %d\n", img->width, img->height);
 
@@ -151,7 +138,7 @@ int main(int argc, char *argv[])
         arguments[i]->result = result;
     }
 
-    arguments[threads - 1]->size += (img->height * img->width) % threads; 
+    arguments[threads - 1]->size += (img->height * img->width) % threads;
 
     // clock_gettime(CLOCK_MONOTONIC, &start);
     // for (int i = 0; i < threads; i++)
