@@ -6,46 +6,39 @@
 #include <string.h>
 #include <unistd.h>
 
-volatile bool mutex;
+volatile int mutex;
 
-void init_lock(volatile bool *lock)
+void init_lock(volatile int *lock)
 {
-    *lock = false;
+    *lock = 0;
 }
 
-void aquire_lock(volatile bool *lock)
+void aquire_lock(volatile int *lock)
 {
-    while (*lock == true)
+    while (__sync_val_compare_and_swap(lock, 0, 1))
     {
         sleep(0);
     }
-
-    while (*lock == false)
-    {
-        (void)__sync_val_compare_and_swap(lock, false, true);
-    }
-
+    
     printf("LOCKED!\n");
 }
 
-void release_lock(volatile bool *lock)
+void release_lock(volatile int *lock)
 {
-    while (*lock == true)
-    {
-        (void)__sync_val_compare_and_swap(lock, true, false);
-    }
-
+    *lock = 0;
     printf("UNLOCKED!\n");
 }
 
 void *thread_sum(void *vargs)
 {
-    aquire_lock(&mutex);
     int *total = (int *)vargs;
+    aquire_lock(&mutex);
 
     // takes a lot of clock cylces
     for (int i = 0; i < 10000000; i++)
+    {
         *total += 1;
+    }
 
     release_lock(&mutex);
     return NULL;
