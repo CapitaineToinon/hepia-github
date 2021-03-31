@@ -100,14 +100,6 @@ ker_t *alloc_gauss()
     ker->data[23] = ker->data[3];
     ker->data[24] = ker->data[4];
 
-    // double sum = 0;
-    // for (int i = 0; i < ker->size * ker->size; i++)
-    // {
-    //     sum += ker->data[i];
-    // }
-    
-    // printf("%f\n", sum);
-
     return ker;
 }
 
@@ -144,14 +136,6 @@ ker_t *alloc_unsharp()
     ker->data[22] = ker->data[2];
     ker->data[23] = ker->data[3];
     ker->data[24] = ker->data[4];
-
-    double sum = 0;
-    for (int i = 0; i < ker->size * ker->size; i++)
-    {
-        sum += ker->data[i];
-    }
-    
-    printf("%f\n", sum);
 
     return ker;
 }

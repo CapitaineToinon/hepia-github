@@ -104,6 +104,11 @@ void linear_ker_segment(img_t *img, ker_t *kernel, int size, int offset, img_t *
             b += current_p.b * kernel->data[kernel_i];
         }
 
+        // ensure values are valid
+        r = min(255, max(0, r));
+        g = min(255, max(0, g));
+        b = min(255, max(0, b));
+
         result->data[target_pixel] = (pixel_t){r, g, b};
     }
 }
@@ -230,9 +235,17 @@ int main(int argc, char *argv[])
                 fprintf(stderr, "Error with pthread_join: %s\n", strerror(errno));
                 exit(EXIT_FAILURE);
             }
+
+            
         }
 
         clock_gettime(CLOCK_MONOTONIC, &finish);
+
+        // free thread memory
+        free(threads_ids);
+        for (int i = 0; i < threads; i++)
+            free(arguments[i]);
+        free(arguments);
     }
 
     // We're now done, save the output, show the duration
@@ -249,18 +262,6 @@ int main(int argc, char *argv[])
     free_img(img);
     free_img(result);
     free_ker(kernel);
-
-    if (threads_ids != NULL)
-    {
-        free(threads_ids);
-    }
-
-    if (arguments != NULL)
-    {
-        for (int i = 0; i < threads; i++)
-            free(arguments[i]);
-        free(arguments);
-    }
 
     return EXIT_SUCCESS;
 }
