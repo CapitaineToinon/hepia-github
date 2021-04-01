@@ -28,9 +28,9 @@ int wsh_exit(int argc, char **args)
 
 int wsh_cd(int argc, char **args)
 {
-    if (argc < 2)
+    if (argc != 2)
     {
-        fprintf(stderr, "%s: cd expected one argument\n", WSH_SHELL_NAME);
+        fprintf(stderr, "%s: cd expected exactly one argument\n", WSH_SHELL_NAME);
         return EXIT_FAILURE;
     }
 
