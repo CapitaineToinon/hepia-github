@@ -234,9 +234,7 @@ int main(int argc, char *argv[])
             {
                 fprintf(stderr, "Error with pthread_join: %s\n", strerror(errno));
                 exit(EXIT_FAILURE);
-            }
-
-            
+            }     
         }
 
         clock_gettime(CLOCK_MONOTONIC, &finish);
