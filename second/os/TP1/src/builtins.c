@@ -23,7 +23,7 @@ int wsh_exit(int argc, char **args)
     (void)argc;
     (void)args;
     printf("Bye baka\n");
-    return EXIT_SUCCESS;
+    exit(EXIT_SUCCESS);
 }
 
 int wsh_cd(int argc, char **args)

@@ -14,23 +14,31 @@
 extern const Command BUILTINS[];
 extern const int BUILTINS_COUNT;
 
-int wsh_launch(int , char **);
+int wsh_launch(int, char **);
 char *wsh_real_line();
 char **wsh_split_line(char *, int *);
 void wsh_welcome();
-int wsh_execute(int , char **);
+int wsh_execute(int, char **);
 void wsh_loop();
 
 int wsh_launch(int argc, char **args)
 {
     (void)argc;
-    pid_t pid;
     int status;
+    pid_t pid = fork();
 
-    pid = fork();
+    if (pid < 0)
+    {
+        // Error forking
+        perror(WSH_SHELL_NAME);
+        return EXIT_FAILURE;
+    }
+
     if (pid == 0)
     {
-        // Child process
+        // We're now in the child process.
+        // Nothing below execvp should execute
+        // if execvp call is succesful
         if (execvp(args[0], args) == -1)
         {
             perror(WSH_SHELL_NAME);
@@ -38,22 +46,32 @@ int wsh_launch(int argc, char **args)
 
         exit(EXIT_FAILURE);
     }
-    else if (pid < 0)
-    {
-        // Error forking
-        perror(WSH_SHELL_NAME);
-        return EXIT_FAILURE;
-    }
     else
     {
-        // Parent process
-        do
+        // We're in the parent process, now wait for the
+        // child process to return
+        pid_t wait = waitpid(pid, &status, WUNTRACED);
+
+        if (wait < 0)
         {
-            (void)waitpid(pid, &status, WUNTRACED);
-        } while (!WIFEXITED(status) && !WIFSIGNALED(status));
+            perror(WSH_SHELL_NAME);
+            return EXIT_FAILURE;
+        }
+
+        if (WIFEXITED(status))
+        {
+            return WEXITSTATUS(status);
+        }
+
+        if (WIFSIGNALED(status))
+        {
+            return WIFSIGNALED(status);
+        }
+
+        return status;
     }
 
-    return EXIT_SUCCESS;
+    return EXIT_FAILURE;
 }
 
 char *wsh_real_line()
@@ -118,7 +136,7 @@ void wsh_welcome()
 
 int wsh_execute(int argc, char **args)
 {
-    if (args[0] == NULL)
+    if (args == NULL || args[0] == NULL)
     {
         return EXIT_SUCCESS;
     }
@@ -141,15 +159,18 @@ void wsh_loop()
     char **args;
     char pwd[PATH_MAX];
     int argc;
+    int code = 0;
 
     while (true)
     {
         getcwd(pwd, PATH_MAX);
-        printf(BOLDMAGENTA "%s" RESET ":" BOLDBLACK " %s " RESET, pwd, WSH_SHELL_LOGO);
+        char *color = code == 0 ? BOLDGREEN : BOLDRED;
+        printf("%s>" RESET " " BOLDMAGENTA "%s" RESET ":" BOLDBLACK " %s " RESET, color, pwd, WSH_SHELL_LOGO);
 
         line = wsh_real_line();
         args = wsh_split_line(line, &argc);
-        wsh_execute(argc, args);
+        code = wsh_execute(argc, args);
+        printf(WSH_JOB_EXIT, code);
 
         free(line);
         free(args);
