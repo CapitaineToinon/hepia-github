@@ -22,7 +22,7 @@ int wsh_exit(int argc, char **args)
 {
     (void)argc;
     (void)args;
-    printf("Bye baka\n");
+    printf(WSH_EXIT_MESSAGE);
     exit(EXIT_SUCCESS);
 }
 

@@ -19,11 +19,13 @@
 #define BOLDMAGENTA "\033[1m\033[35m" /* Bold Magenta */
 #define BOLDCYAN "\033[1m\033[36m"    /* Bold Cyan */
 #define BOLDWHITE "\033[1m\033[37m"   /* Bold White */
+
 #define WSH_RL_BUFFERSIZE 1024
 #define WSH_SHELL_LOGO "ヅ"
 #define WSH_TOK_SEP " \t\r\n\a"
 #define WSH_TOK_BUFFERSIZE 64
 #define WSH_SHELL_NAME "wsh"
+#define WSH_EXIT_MESSAGE "N... not like I enjoyed talking with you, baka!\n"
 #define WSH_JOB_EXIT "Foreground job exited with code %d.\n"
 
 #endif
