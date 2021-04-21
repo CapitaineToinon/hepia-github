@@ -4,16 +4,33 @@
 #include <pthread.h>
 #include <errno.h>
 #include <string.h>
-#include <time.h>
+#include "helper.h"
 #include "barrier.h"
 
-double MAX_K_AKA_I = 5;
-double M = 10;
+#define ARGUMENT_COUNT 4
+#define A 100
+
+typedef struct phase_a_t
+{
+    int from;
+    int to;
+} phase_a_t;
+
+/**
+ * Prints the help on how to use this program
+ * 
+ * @param dest the file to which the help should be sent
+ * @param filename the name of the current program
+ */
+void print_help(FILE *dest, char *filename)
+{
+    fprintf(dest, "Usage: %s <M> <N> <I>\n", filename);
+}
+
+// global variables used by the threads
+int M, N, I;
 pthread_barrier_t barrier;
 double **phase_a_values;
-double *k_results;
-
-#define A 100
 
 double x(int k, int i)
 {
@@ -33,36 +50,42 @@ double r(double k, double M)
     return result;
 }
 
-double get_elapsed_ms(struct timespec start, struct timespec finish)
-{
-    double elapsed_ms = 1000 * (finish.tv_sec - start.tv_sec);
-    elapsed_ms += (finish.tv_nsec - start.tv_nsec) / 1000000.0;
-    return elapsed_ms;
-}
-
+/**
+ * Thread use to do the sums of the values computed by the phase_A thread(s)
+ * 
+ * @param vargs vargs is not used
+ */
 void *phase_B(void *vargs)
 {
-    for (int k = 0; k < MAX_K_AKA_I; k++)
+    (void)vargs;
+    for (int k = 0; k < I; k++)
     {
         pthread_barrier_wait(&barrier);
-        k_results[k] = 0;
-        
+        double result = 0;
+
         for (int i = 0; i < M; i++)
         {
-            k_results[k] += phase_a_values[k][i];
+            result += phase_a_values[k][i];
         }
 
-        printf("r(%d)=%f\n", k, k_results[k]);
+        printf("r(%d)=%f\n", k, result);
     }
 
     return NULL;
 }
 
+/**
+ * Thread use to do the sums of the values computed by the phase_A thread(s)
+ * 
+ * @param vargs context of type phase_a_t used by the thread to know its own context
+ */
 void *phase_A(void *vargs)
 {
-    for (int k = 0; k < MAX_K_AKA_I; k++)
+    phase_a_t *args = (phase_a_t *)vargs;
+
+    for (int k = 0; k < I; k++)
     {
-        for (int i = 0; i < M; i++)
+        for (int i = args->from; i < args->to; i++)
         {
             phase_a_values[k][i] = (A * x(k, i));
         }
@@ -73,59 +96,116 @@ void *phase_A(void *vargs)
     return NULL;
 }
 
-int main(void)
+int main(int argc, char *argv[])
 {
-    pthread_barrier_init(&barrier, NULL, 2);
-    phase_a_values = malloc(sizeof(double *) * MAX_K_AKA_I);
-    for (int k = 0; k < MAX_K_AKA_I; k++)
+    if (argc != ARGUMENT_COUNT)
     {
-        phase_a_values[k] = malloc(sizeof(double) * M);
+        print_help(stderr, argv[0]);
+        exit(EXIT_FAILURE);
     }
 
-    k_results = malloc(sizeof(double) * MAX_K_AKA_I);
+    int phase_a_N;
+    struct timespec start, finish;
+    M = stringtoi(argv[1]);
+    N = stringtoi(argv[2]);
+    I = stringtoi(argv[3]);
+    phase_a_N = N - 1;
 
-    pthread_t sum, args;
-    // pthread_t arguments[thread_count];
+    if (N < 2)
+    {
+        fprintf(stderr, "N needs to be equal or greater than 2\n");
+        exit(EXIT_FAILURE);
+    }
 
-    // phase B for the thread
+    if (M < 1)
+    {
+        fprintf(stderr, "M needs to be a positif interger\n");
+        exit(EXIT_FAILURE);
+    }
+
+    if (I < 1)
+    {
+        fprintf(stderr, "I needs to be a positif interger\n");
+        exit(EXIT_FAILURE);
+    }
+
+    if (N > M)
+    {
+        fprintf(stderr, "N cannot be greater than M\n");
+        exit(EXIT_FAILURE);
+    }
+
+    // The barrier that will be used by both phase_A and phase_B
+    pthread_barrier_init(&barrier, NULL, N);
+
+    if ((phase_a_values = malloc(sizeof(double *) * I)) == NULL)
+    {
+        fprintf(stderr, "Error with malloc: %s\n", strerror(errno));
+        exit(EXIT_FAILURE);
+    }
+
+    for (int k = 0; k < I; k++)
+    {
+        if ((phase_a_values[k] = malloc(sizeof(double) * M)) == NULL)
+        {
+            fprintf(stderr, "Error with malloc: %s\n", strerror(errno));
+            exit(EXIT_FAILURE);
+        }
+    }
+
+    // create the contexts for the threads,
+    // passing all the needed variables
+    pthread_t sum;
+    pthread_t args[phase_a_N];
+    phase_a_t args_t[phase_a_N];
+
+    int chunk_size = M / phase_a_N;
+    int chunk_extra = M % phase_a_N;
+
+    for (int i = 0; i < phase_a_N; i++)
+    {
+        int from = chunk_size * i;
+        int to = from + chunk_size;
+        args_t[i] = (phase_a_t){from, to};
+    }
+
+    args_t[phase_a_N - 1].to += chunk_extra;
+
+    clock_gettime(CLOCK_MONOTONIC, &start);
+    // create the one and only thread used to sum the results
     if (pthread_create(&sum, NULL, &phase_B, NULL) != 0)
     {
         fprintf(stderr, "Error with pthread_create: %s\n", strerror(errno));
         exit(EXIT_FAILURE);
     }
 
-    if (pthread_create(&args, NULL, &phase_A, NULL) != 0)
+    // create all the needed threads for the computation of the args
+    for (int i = 0; i < phase_a_N; i++)
     {
-        fprintf(stderr, "Error with pthread_create: %s\n", strerror(errno));
-        exit(EXIT_FAILURE);
+        if (pthread_create(&args[i], NULL, &phase_A, &args_t[i]) != 0)
+        {
+            fprintf(stderr, "Error with pthread_create: %s\n", strerror(errno));
+            exit(EXIT_FAILURE);
+        }
     }
 
-    // for (int i = 0; i < thread_count; i++)
-    // {
-    //     if (pthread_create(&arguments[i], NULL, &phase_A, &var.contexts[i]) != 0)
-    //     {
-    //         fprintf(stderr, "Error with pthread_create: %s\n", strerror(errno));
-    //         exit(EXIT_FAILURE);
-    //     }
-    // }
-
+    // join back the threads
     if (pthread_join(sum, NULL) != 0)
     {
         fprintf(stderr, "Error with pthread_join: %s\n", strerror(errno));
         exit(EXIT_FAILURE);
     }
 
-    if (pthread_join(args, NULL) != 0)
+    for (int i = 0; i < phase_a_N; i++)
     {
-        fprintf(stderr, "Error with pthread_join: %s\n", strerror(errno));
-        exit(EXIT_FAILURE);
+        if (pthread_join(args[i], NULL) != 0)
+        {
+            fprintf(stderr, "Error with pthread_join: %s\n", strerror(errno));
+            exit(EXIT_FAILURE);
+        }
     }
-
-    for (int k = 0; k < MAX_K_AKA_I; k++)
-    {
-        printf("Normal r(%d)=%f\n", k, r(k, M));
-    }
-    
+    clock_gettime(CLOCK_MONOTONIC, &finish);
+    printf("Total time %f\n", get_elapsed_ms(start, finish));
 
     return 0;
 }

@@ -9,7 +9,8 @@ OUTPUT=bin
 default: build
 
 build: init
-	$(CC) $(OPTIONS) $(SOURCE)/main.c -o $(OUTPUT)/main $(LIB)
+	$(CC) $(DEBUG) $(OPTIONS) -c $(SOURCE)/helper.c -o $(OUTPUT)/helper.o
+	$(CC) $(OPTIONS) $(SOURCE)/main.c -o $(OUTPUT)/main $(OUTPUT)/helper.o $(LIB)
 
 init:
 	mkdir -p bin
