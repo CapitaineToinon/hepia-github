@@ -9,9 +9,8 @@ default: build
 
 build: init
 	$(CC) $(OPTIONS) -c $(SOURCE)/wsh.c -o $(OUTPUT)/wsh.o
-	$(CC) $(OPTIONS) -c $(SOURCE)/process.c -o $(OUTPUT)/process.o
 	$(CC) $(OPTIONS) -c $(SOURCE)/builtins.c -o $(OUTPUT)/builtins.o
-	$(CC) $(OPTIONS) $(SOURCE)/main.c -o $(OUTPUT)/main $(OUTPUT)/wsh.o $(OUTPUT)/builtins.o $(OUTPUT)/process.o
+	$(CC) $(OPTIONS) $(SOURCE)/main.c -o $(OUTPUT)/main $(OUTPUT)/wsh.o $(OUTPUT)/builtins.o 
 
 init:
 	mkdir -p bin
