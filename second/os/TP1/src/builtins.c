@@ -1,5 +1,4 @@
 #include "builtins.h"
-#include "common.h"
 
 const Command BUILTINS[] = {
     {"help", wsh_help},
@@ -53,7 +52,7 @@ int wsh_type(int argc, char **args)
 
     for (int i = 0; i < BUILTINS_COUNT; i++)
     {
-        if (strcmp(BUILTINS[i].name, args[1]) == 0)
+        if (strncmp(BUILTINS[i].name, args[1], PATH_MAX) == 0)
         {
             printf("%s is a shell builtin\n", args[1]);
             return EXIT_SUCCESS;

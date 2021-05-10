@@ -6,6 +6,8 @@
 #include <limits.h>
 #include <unistd.h>
 #include <string.h>
+#include "colors.h"
+#include "wsh.h"
 
 typedef struct command_t
 {
@@ -13,6 +15,7 @@ typedef struct command_t
     int (*function)(int, char **);
 } Command;
 
+int wsh_execute(int, char **);
 int wsh_help(int, char **);
 int wsh_exit(int, char **);
 int wsh_cd(int, char **);
