@@ -15,6 +15,7 @@ typedef struct command_t
     int (*function)(int, char **);
 } Command;
 
+bool is_builtin(char *);
 int wsh_execute(int, char **);
 int wsh_help(int, char **);
 int wsh_exit(int, char **);

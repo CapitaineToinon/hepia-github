@@ -9,6 +9,24 @@ const Command BUILTINS[] = {
 
 const int BUILTINS_COUNT = sizeof(BUILTINS) / sizeof(Command);
 
+bool is_builtin(char *name)
+{
+    if (name == NULL)
+    {
+        return false;
+    }
+
+    for (int i = 0; i < BUILTINS_COUNT; i++)
+    {
+        if (strncmp(BUILTINS[i].name, name, PATH_MAX) == 0)
+        {
+            return true;
+        }
+    }
+
+    return false;
+}
+
 int wsh_help(int argc, char **args)
 {
     (void)argc;

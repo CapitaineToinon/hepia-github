@@ -4,6 +4,15 @@
 extern const Command BUILTINS[];
 extern const int BUILTINS_COUNT;
 
+volatile sig_atomic_t sigint_signal;
+
+static void sigint_handler()
+{
+    /* Take appropriate actions for signal delivery */
+    printf("\n");
+    sigint_signal = 1;
+}
+
 cmdtype_t wsh_get_command_type(int argc, char **args, int *split_index)
 {
     *split_index = 0;
@@ -51,6 +60,14 @@ int wsh_process_pipe(int argc, char **args, int split_index)
 
     memcpy(first_args, args, split_index * sizeof(char *));
 
+    // check if any of the command is a builtin and exit if it is, we don't handle those
+    if (is_builtin(first_args[0]) || is_builtin(second_args[0]))
+    {
+        free(first_args);
+        fprintf(stderr, "Using builtins with pipes is not supported.\n");
+        return EXIT_FAILURE;
+    }
+
     // now handle the pipe process
     pid_t pid;
     int WRITE_END = 0;
@@ -58,37 +75,72 @@ int wsh_process_pipe(int argc, char **args, int split_index)
     int fd[2];
     pipe(fd);
 
-    if ((pid = fork()) == 0)
+    pid = fork();
+
+    if (pid < 0)
     {
+        // Error forking
+        free(first_args);
+        perror(WSH_SHELL_NAME);
+        return EXIT_FAILURE;
+    }
+
+    if (pid == 0)
+    {
+        // We're now in the child process.
+        // set pgid to avoid zombie process
+        if (setpgid(pid, 0) == -1)
+        {
+            free(first_args);
+            perror(WSH_SHELL_NAME);
+            return EXIT_FAILURE;
+        }
+
         // redirect stdout to a file descriptor we control for later
         dup2(fd[READ_END], STDOUT_FILENO);
         close(fd[READ_END]);
         close(fd[WRITE_END]);
 
         // execute the first command
-        if (execvp(first_args[0], first_args) == -1)
-        {
-            perror(WSH_SHELL_NAME);
-        }
+        execvp(first_args[0], first_args);
 
-        // we should never reach this unless something failed
+        // if we're still here, there was an error
+        free(first_args);
+        perror(WSH_SHELL_NAME);
         exit(EXIT_FAILURE);
     }
     else
     {
-        if ((pid = fork()) == 0)
+        pid = fork();
+
+        if (pid < 0)
         {
+            // Error forking
+            free(first_args);
+            perror(WSH_SHELL_NAME);
+            return EXIT_FAILURE;
+        }
+
+        if (pid == 0)
+        {
+            // We're now in the child process.
+            // set pgid to avoid zombie process
+            if (setpgid(pid, 0) == -1)
+            {
+                perror(WSH_SHELL_NAME);
+                return EXIT_FAILURE;
+            }
+
             dup2(fd[WRITE_END], STDIN_FILENO);
             close(fd[WRITE_END]);
             close(fd[READ_END]);
 
             // execute the second command
-            if (execvp(second_args[0], second_args) == -1)
-            {
-                perror(WSH_SHELL_NAME);
-            }
+            execvp(second_args[0], second_args);
 
-            // we should never reach this unless something failed
+            // if we're still here, there was an error
+            free(first_args);
+            perror(WSH_SHELL_NAME);
             exit(EXIT_FAILURE);
         }
         else
@@ -101,17 +153,20 @@ int wsh_process_pipe(int argc, char **args, int split_index)
 
             if (wait < 0)
             {
+                free(first_args);
                 perror(WSH_SHELL_NAME);
-                return EXIT_FAILURE;
+                return EXIT_SUCCESS;
             }
 
             if (WIFEXITED(status))
             {
+                free(first_args);
                 return WEXITSTATUS(status);
             }
 
             if (WIFSIGNALED(status))
             {
+                free(first_args);
                 return WIFSIGNALED(status);
             }
         }
@@ -185,14 +240,19 @@ int wsh_launch(int argc, char **args)
     if (pid == 0)
     {
         // We're now in the child process.
-        // Nothing below execvp should execute
-        // if execvp call is succesful
-        if (execvp(args[0], args) == -1)
+        // set pgid to avoid zombie process
+        if (setpgid(pid, 0) == -1)
         {
             perror(WSH_SHELL_NAME);
+            return EXIT_FAILURE;
         }
 
-        // we should never reach this unless something failed
+        // Nothing below execvp should execute
+        // if execvp call is succesful
+        execvp(args[0], args);
+
+        // if we're still here, there was an error
+        perror(WSH_SHELL_NAME);
         exit(EXIT_FAILURE);
     }
     else
@@ -304,6 +364,18 @@ int wsh_execute(int argc, char **args)
 
 void wsh_loop()
 {
+    struct sigaction sa;
+
+    sa.sa_handler = sigint_handler;
+    sigemptyset(&sa.sa_mask);
+    sa.sa_flags = SA_RESTART;
+
+    if (sigaction(SIGINT, &sa, NULL) == -1)
+    {
+        fprintf(stderr, "Failed to sigaction in main: %s.\n", strerror(errno));
+        exit(EXIT_FAILURE);
+    }
+
     char *line;
     char **args;
     char pwd[PATH_MAX];
@@ -312,6 +384,7 @@ void wsh_loop()
 
     while (true)
     {
+        sigint_signal = 0;
         getcwd(pwd, PATH_MAX);
         char *color = code == 0 ? BOLDGREEN : BOLDRED;
         printf("%s>" RESET " " BOLDMAGENTA "%s" RESET ":" BOLDBLACK " %s " RESET, color, pwd, WSH_SHELL_LOGO);
@@ -321,6 +394,8 @@ void wsh_loop()
 
         int split_index;
         cmdtype_t type = wsh_get_command_type(argc, args, &split_index);
+
+        sa.sa_flags = SA_RESTART;
 
         switch (type)
         {
@@ -342,6 +417,7 @@ void wsh_loop()
             break;
         }
 
+        printf(WSH_JOB_EXIT, code);
         free(line);
         free(args);
     }
