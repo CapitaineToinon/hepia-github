@@ -20,7 +20,8 @@
 #define WSH_TOK_SEP " \t\r\n\a"
 #define WSH_TOK_BUFFERSIZE 64
 #define WSH_SHELL_NAME "wsh"
-#define WSH_EXIT_MESSAGE "N... not like I enjoyed talking with you, baka!\n"
+#define WSH_WELCOME_MESSAGE "Okaerinasaimase Goshujin-sama!\n"
+#define WSH_EXIT_MESSAGE "N... not like I enjoyed talking with you or anything, baka!\n"
 #define WSH_JOB_EXIT "Foreground job exited with code %d.\n"
 #define WSH_BACKGROUND_JOB_EXIT "\nBackground job with pid [%d] exited with code %d\n"
 #define WSH_SUPPORTED_ACTIONS "&, |, >, >>"

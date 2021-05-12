@@ -49,7 +49,7 @@ int wsh_exit(int argc, char **args)
     // unused params
     (void)argc;
     (void)args;
-    printf(MAGENTA WSH_EXIT_MESSAGE RESET);
+    printf(WSH_EXIT_MESSAGE);
     exit(EXIT_SUCCESS);
 }
 
@@ -95,6 +95,6 @@ int wsh_hi(int argc, char **args)
     // unused params
     (void)argc;
     (void)args;
-    printf("Hi! Welcome to the weeb shell (wsh).\n");
+    printf(WSH_WELCOME_MESSAGE);
     return EXIT_SUCCESS;
 }
