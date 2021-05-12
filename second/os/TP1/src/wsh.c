@@ -20,12 +20,14 @@ static void sigchld_handler(int sig)
         {
             int code = WEXITSTATUS(status);
             printf(WSH_BACKGROUND_JOB_EXIT, child, code);
+            has_background = false;
         }
 
         if (WIFSIGNALED(status))
         {
             int code = WIFSIGNALED(status);
             printf(WSH_BACKGROUND_JOB_EXIT, child, code);
+            has_background = false;
         }
     }
 }
@@ -294,6 +296,8 @@ int wsh_launch(int argc, char **args, bool background)
         return EXIT_FAILURE;
     }
 
+    has_background = background;
+
     // fork to execute the job
     pid = fork();
 
@@ -317,7 +321,6 @@ int wsh_launch(int argc, char **args, bool background)
         // redirect output if we background
         if (background)
         {
-            has_background = true;
             saved_stdout = dup(STDOUT_FILENO);
 
             if ((fd = open("/dev/null", O_RDWR, S_IRUSR | S_IWUSR)) == -1)
