@@ -1,44 +1,5 @@
 #include "wsh.h"
 
-// declared in builtins.c
-extern const Command BUILTINS[];
-extern const int BUILTINS_COUNT;
-
-// volatile sig_atomic_t sigint_signal;
-volatile pid_t has_background = false;
-
-static void sigchld_handler(int sig)
-{
-    (void)sig;
-    int status;
-    pid_t child;
-
-    // Use waitpid after we recieve a signal from a child to process it
-    while ((child = waitpid(-1, &status, WNOHANG)) > 0)
-    {
-        if (WIFEXITED(status))
-        {
-            int code = WEXITSTATUS(status);
-            printf(WSH_BACKGROUND_JOB_EXIT, child, code);
-            has_background = false;
-        }
-
-        if (WIFSIGNALED(status))
-        {
-            int code = WIFSIGNALED(status);
-            printf(WSH_BACKGROUND_JOB_EXIT, child, code);
-            has_background = false;
-        }
-    }
-}
-
-// static void sigint_handler()
-// {
-//     /* Take appropriate actions for signal delivery */
-//     printf("\n");
-//     sigint_signal = 1;
-// }
-
 int wsh_get_command_type(int argc, char **args, int *split_index, cmdtype_t *type)
 {
     *type = CMD_SIMPLE;
@@ -77,11 +38,25 @@ int wsh_get_command_type(int argc, char **args, int *split_index, cmdtype_t *typ
         }
     }
 
+    // make sure the command contains only up to 1 action at a time
+    // this is an intended limitation to keep the logic simple
     if (matches > 1)
     {
-        fprintf(stderr, "You can only use one special action at a time per line (&, |, >, >>).\n");
+        fprintf(stderr, "You can only use one special action at a time per line (%s).\n", WSH_SUPPORTED_ACTIONS);
         return EXIT_FAILURE;
     }
+
+#ifdef DEBUG
+    const char *cmdtype_string[] = {
+        "CMD_SIMPLE",
+        "CMD_PIPE",
+        "CMD_FILEOUT",
+        "CMD_FILEIN",
+        "CMD_FILEAPPEND",
+        "CMD_BACKGROUND",
+    };
+    printf("[DEBUG]: Command of type %s\n", cmdtype_string[(int)*type]);
+#endif
 
     return EXIT_SUCCESS;
 }
@@ -91,9 +66,8 @@ int wsh_process_pipe(int argc, char **args, int split_index)
     (void)argc;
     int status = EXIT_FAILURE;
 
-    // create a new args for the first command
-    char **first_args;
-    char **second_args = args + split_index + 1;
+    char **first_args;                           // create with malloc a new args for the first command
+    char **second_args = args + split_index + 1; // can just offset for the 2nd args
 
     if ((first_args = malloc(split_index * sizeof(char *))) == NULL)
     {
@@ -148,7 +122,7 @@ int wsh_process_pipe(int argc, char **args, int split_index)
 
         // if we're still here, there was an error
         perror(WSH_SHELL_NAME);
-        exit(EXIT_FAILURE);
+        exit(EXIT_FAILURE); // when in child, exit and not return to end the process
     }
     else
     {
@@ -188,7 +162,7 @@ int wsh_process_pipe(int argc, char **args, int split_index)
 
             // if we're still here, there was an error
             perror(WSH_SHELL_NAME);
-            exit(EXIT_FAILURE);
+            exit(EXIT_FAILURE); // when in child, exit and not return to end the process
         }
         else
         {
@@ -290,13 +264,11 @@ int wsh_launch(int argc, char **args, bool background)
     int fd = -1;
     int saved_stdout = 0;
 
-    if (background && has_background)
+    if (background && has_background_job())
     {
         fprintf(stderr, "A background job is already running. There can only be one background job at a time.\n");
         return EXIT_FAILURE;
     }
-
-    has_background = background;
 
     // fork to execute the job
     pid = fork();
@@ -350,12 +322,26 @@ int wsh_launch(int argc, char **args, bool background)
         // exit without waiting if we're in background mode
         if (background)
         {
-            fflush(stdout);
+            status = EXIT_SUCCESS;
+
+            // save background job in case we have a sigout
+            // no need the index
+            if (!save_background_job(pid))
+            {
+                fprintf(stderr, "Failed to save as a background job but job already started. Keeps executing.\n");
+                status = EXIT_FAILURE;
+            }
+
+            if (fflush(stdout) != 0)
+            {
+                fprintf(stderr, "Error with fflush() in wsh_process_fileout: %s.\n", strerror(errno));
+                status = EXIT_FAILURE;
+            }
 
             if (saved_stdout && dup2(saved_stdout, STDOUT_FILENO) == -1)
             {
-                fprintf(stderr, "Error with dup2() in wsh_process_fileout: %s.\n", strerror(errno));
-                return EXIT_FAILURE;
+                fprintf(stderr, "Error with dup2() in wsh_launch: %s.\n", strerror(errno));
+                status = EXIT_FAILURE;
             }
 
             if (fd != -1)
@@ -364,7 +350,16 @@ int wsh_launch(int argc, char **args, bool background)
             }
 
             printf("Started background job with pid [%d]\n", pid);
-            return EXIT_SUCCESS;
+            return status;
+        }
+
+        // only save foreground jobs for potential sigint
+        int index = save_foreground_job(pid);
+
+        if (index == -1)
+        {
+            fprintf(stderr, "There are too many jobs already running.\n");
+            return EXIT_FAILURE;
         }
 
         // We're in the parent process, now wait for the
@@ -372,18 +367,21 @@ int wsh_launch(int argc, char **args, bool background)
         if (waitpid(pid, &status, WUNTRACED) < 0)
         {
             perror(WSH_SHELL_NAME);
-            return EXIT_FAILURE;
+            status = EXIT_FAILURE;
         }
 
         if (WIFEXITED(status))
         {
-            return WEXITSTATUS(status);
+            status = WEXITSTATUS(status);
         }
 
         if (WIFSIGNALED(status))
         {
-            return WIFSIGNALED(status);
+            status = WIFSIGNALED(status);
         }
+
+        free_job(index);
+        return status;
     }
 
     return status;
@@ -452,46 +450,40 @@ int wsh_execute(int argc, char **args, bool background)
     }
 
     // check for builtins first
-    for (int i = 0; i < BUILTINS_COUNT; i++)
+    Command builtin;
+    if (find_builtin(args[0], &builtin))
     {
-        if (strcmp(BUILTINS[i].name, args[0]) == 0)
+        if (background)
         {
-            if (background)
-            {
-                fprintf(stderr, "Cannot start builtins in background.\n");
-                return EXIT_FAILURE;
-            }
-
-            return BUILTINS[i].function(argc, args);
+            fprintf(stderr, "Cannot start builtins in background.\n");
+            return EXIT_FAILURE;
         }
+
+        return builtin.function(argc, args);
     }
+
+    // for (int i = 0; i < BUILTINS_COUNT; i++)
+    // {
+    //     if (strcmp(BUILTINS[i].name, args[0]) == 0)
+    //     {
+    //         if (background)
+    //         {
+    //             fprintf(stderr, "Cannot start builtins in background.\n");
+    //             return EXIT_FAILURE;
+    //         }
+
+    //         return BUILTINS[i].function(argc, args);
+    //     }
+    // }
 
     return wsh_launch(argc, args, background);
 }
 
 void wsh_loop()
 {
-    // struct sigaction sa_sigint;
-    struct sigaction sa_sigchld;
-
-    // SIGINT TODO
-    // sa_sigint.sa_handler = sigint_handler;
-    // sigemptyset(&sa_sigint.sa_mask);
-    // sa_sigint.sa_flags = SA_RESTART;
-
-    // if (sigaction(SIGINT, &sa_sigint, NULL) == -1)
-    // {
-    //     fprintf(stderr, "Failed to sigaction in main: %s.\n", strerror(errno));
-    //     exit(EXIT_FAILURE);
-    // }
-
-    // SIGCHLD
-    sa_sigchld.sa_handler = &sigchld_handler;
-    sigemptyset(&sa_sigchld.sa_mask);
-    sa_sigchld.sa_flags = SA_NOCLDSTOP;
-    if (sigaction(SIGCHLD, &sa_sigchld, 0) == -1)
+    if (init_signals() != 0)
     {
-        fprintf(stderr, "Failed to sigaction in main: %s.\n", strerror(errno));
+        fprintf(stderr, "Failed to init signals in wsh_loop().\n");
         exit(EXIT_FAILURE);
     }
 
