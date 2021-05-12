@@ -5,6 +5,7 @@ const Command BUILTINS[] = {
     {"exit", wsh_exit},
     {"cd", wsh_cd},
     {"type", wsh_type},
+    {"hi", wsh_hi},
 };
 
 const int BUILTINS_COUNT = sizeof(BUILTINS) / sizeof(Command);
@@ -39,7 +40,7 @@ int wsh_exit(int argc, char **args)
 {
     (void)argc;
     (void)args;
-    printf(WSH_EXIT_MESSAGE);
+    printf(MAGENTA WSH_EXIT_MESSAGE RESET);
     exit(EXIT_SUCCESS);
 }
 
@@ -78,5 +79,13 @@ int wsh_type(int argc, char **args)
     }
 
     printf("%s is not a shell builtin\n", args[1]);
+    return EXIT_SUCCESS;
+}
+
+int wsh_hi(int argc, char **args)
+{
+    (void)argc;
+    (void)args;
+    printf("Hi! Welcome to the weeb shell (wsh).\n");
     return EXIT_SUCCESS;
 }

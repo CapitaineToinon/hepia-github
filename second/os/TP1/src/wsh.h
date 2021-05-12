@@ -22,6 +22,7 @@
 #define WSH_SHELL_NAME "wsh"
 #define WSH_EXIT_MESSAGE "N... not like I enjoyed talking with you, baka!\n"
 #define WSH_JOB_EXIT "Foreground job exited with code %d.\n"
+#define WSH_BACKGROUND_JOB_EXIT "\nBackground job with pid [%d] exited with code %d\n"
 
 typedef enum cmdtype
 {
@@ -29,17 +30,17 @@ typedef enum cmdtype
     CMD_PIPE,
     CMD_FILEOUT,
     CMD_FILEIN,
-    CMD_FILEAPPEND
+    CMD_FILEAPPEND,
+    CMD_BACKGROUND,
 } cmdtype_t;
 
-cmdtype_t wsh_get_command_type(int, char **, int *);
+int wsh_get_command_type(int, char **, int *, cmdtype_t *);
 int wsh_process_pipe(int, char **, int);
 int wsh_process_fileout(int, char **, int, bool);
-int wsh_launch(int, char **);
+int wsh_launch(int, char **, bool);
 char *wsh_real_line();
 char **wsh_split_line(char *, int *);
-void wsh_welcome();
-int wsh_execute(int, char **);
+int wsh_execute(int, char **, bool);
 void wsh_loop();
 
 #endif

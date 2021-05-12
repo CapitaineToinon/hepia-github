@@ -16,10 +16,10 @@ typedef struct command_t
 } Command;
 
 bool is_builtin(char *);
-int wsh_execute(int, char **);
 int wsh_help(int, char **);
 int wsh_exit(int, char **);
 int wsh_cd(int, char **);
 int wsh_type(int, char **);
+int wsh_hi(int, char **);
 
 #endif
