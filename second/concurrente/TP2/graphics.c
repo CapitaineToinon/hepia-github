@@ -85,5 +85,6 @@ void destroy_graphics(graphics_t *context)
         SDL_DestroyTexture(context->coin_texture);
         SDL_DestroyRenderer(context->renderer);
         SDL_DestroyWindow(context->window);
+        SDL_Quit();
     }
 }

@@ -2,26 +2,34 @@
 #define __GAME_H_SEEN__
 
 #include <pthread.h>
+#include <stdbool.h>
 #include "graphics.h"
 
-#define OBJECT_NB 9
-#define WHEEL_NB 3
+#define OBJECT_COUNT 7
+#define OBJECT_PADDING_COUNT 2
+#define WHEEL_COUNT 3
 #define PLAYERS_COIN_COUNT 10
 #define BANK_COIN_COUNT 30
 
+enum WheelsState
+{
+    IDLE,
+    SPINNING,
+};
+
 typedef struct game_state_t
 {
+    pthread_mutex_t mutex;
     graphics_t graphics;
-    pthread_t update_loop;
-    pthread_t event_loop;
+    enum WheelsState wheels_state;
+    pthread_t wheels_ids[WHEEL_COUNT];
+    int wheels_offsets[WHEEL_COUNT];
     int player_coins;
     int bank_coins;
 } game_state_t;
 
-int init_game();
-void destroy_game();
-void update_game();
-
-void spend_coin();
+int init_game(game_state_t *);
+void destroy_game(game_state_t *);
+void try_spend_coin(game_state_t *);
 
 #endif

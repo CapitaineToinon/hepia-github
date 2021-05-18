@@ -1,25 +1,39 @@
-
-#include <stdlib.h>
-#include <stdio.h>
 #include <stdbool.h>
-// #include <unistd.h>
-#include <pthread.h>
-// #include <semaphore.h>
+#include <semaphore.h>
 #include "utilities.h"
-// #include "display.h"
-#include "graphics.h"
+#include "render.h"
 #include "game.h"
 
 #define UPDATE_MS 20
 
-void *update_thread(void *vargs)
+game_state_t state;
+
+bool spinning = false;
+bool quitting = false;
+
+void *wheel_func(void *vargs)
+{
+    // todo not do that apparently
+    int *index = (int *)vargs;
+
+    printf("Index %d\n", *index);
+
+    pthread_mutex_lock(&state.mutex);
+    state.wheels_offsets[*index] += 2;
+    pthread_mutex_unlock(&state.mutex);
+    msleep(6 - (*index) * 2);
+
+    return NULL;
+}
+
+void *display_func(void *vargs)
 {
     (void)vargs;
     struct timespec ts;
 
-    while (true) // this thread is meant to be killed by
+    while (!quitting)
     {
-        update_game();
+        render_game(&state);
         clock_gettime(CLOCK_REALTIME, &ts);
         msleep(UPDATE_MS);
     }
@@ -27,17 +41,17 @@ void *update_thread(void *vargs)
     return NULL;
 }
 
-void event_loop()
+void *keyboard_func(void *vargs)
 {
+    (void)vargs;
     SDL_Event event;
-    bool quit = false;
 
-    while (!quit)
+    while (!quitting)
     {
         if (SDL_WaitEvent(&event) == 0)
         {
             fprintf(stderr, "Error with SDL_WaitEvent: %s\n", SDL_GetError());
-            quit = true;
+            quitting = true;
             continue;
         }
 
@@ -45,11 +59,11 @@ void event_loop()
         {
         case SDL_QUIT:
             // if SDL_Quit() called
-            quit = true;
+            quitting = true;
             break;
         case SDL_WINDOWEVENT:
             // if windows closed by user
-            quit = event.window.event == SDL_WINDOWEVENT_CLOSE;
+            quitting = event.window.event == SDL_WINDOWEVENT_CLOSE;
             break;
         case SDL_KEYDOWN:
             // if key pressed
@@ -57,49 +71,91 @@ void event_loop()
             {
             case SDLK_q:
             case SDLK_ESCAPE:
-                quit = true;
+                quitting = true;
                 break;
             case SDLK_SPACE:
                 printf("Spaced pressed\n");
+                state.wheels_state = state.wheels_state == SPINNING ? IDLE : SPINNING;
                 break;
             case SDLK_s:
                 printf("S pressed\n");
-                spend_coin();
+                try_spend_coin(&state);
                 break;
             }
             break;
         }
     }
+
+    return NULL;
 }
 
 int main()
 {
-    pthread_t update_loop;
+    pthread_t display_func_thread;
+    pthread_t keyboard_func_thread;
+    pthread_t wheel_func_threads[WHEEL_COUNT];
+    int wheel_indexes[WHEEL_COUNT];
 
-    if (init_game() == EXIT_FAILURE) // import all the assets and create the SDL2 renderer and game context containing the current game state
+    if (init_game(&state) == EXIT_FAILURE) // import all the assets and create the SDL2 renderer and game context containing the current game state
     {
         fprintf(stderr, "Error with init_game_state\n");
         exit(EXIT_FAILURE);
     }
 
-    if (pthread_create(&update_loop, NULL, &update_thread, NULL) != 0)
+    // wheel_indexes
+    for (int i = 0; i < WHEEL_COUNT; i++)
+    {
+        wheel_indexes[i] = i;
+    }
+
+    // display_func_thread
+    if (pthread_create(&display_func_thread, NULL, &display_func, NULL) != 0)
     {
         fprintf(stderr, "Error with pthread_create: %s\n", strerror(errno));
         exit(EXIT_FAILURE);
     }
 
-    event_loop();
+    // wheel_func_threads
+    for (int i = 0; i < WHEEL_COUNT; i++)
+    {
+        if (pthread_create(&wheel_func_threads[i], NULL, &wheel_func, &wheel_indexes[i]) != 0)
+        {
+            fprintf(stderr, "Error with pthread_create: %s\n", strerror(errno));
+            exit(EXIT_FAILURE);
+        }
+    }
 
-    // if we're out of the event loop, it's that we need to close the program
-    pthread_cancel(update_loop);
+    // keyboard_func_thread
+    if (pthread_create(&keyboard_func_thread, NULL, &keyboard_func, NULL) != 0)
+    {
+        fprintf(stderr, "Error with pthread_create: %s\n", strerror(errno));
+        exit(EXIT_FAILURE);
+    }
 
-    if (pthread_join(update_loop, NULL) != 0)
+    // display_func_thread
+    if (pthread_join(display_func_thread, NULL) != 0)
     {
         fprintf(stderr, "Error with pthread_join: %s\n", strerror(errno));
         exit(EXIT_FAILURE);
     }
 
-    destroy_game(); // destroy context once we're done
+    // wheel_func_threads
+    for (int i = 0; i < WHEEL_COUNT; i++)
+    {
+        if (pthread_join(wheel_func_threads[i], NULL) != 0)
+        {
+            fprintf(stderr, "Error with pthread_join: %s\n", strerror(errno));
+            exit(EXIT_FAILURE);
+        }
+    }
 
+    // keyboard_func_thread
+    if (pthread_join(keyboard_func_thread, NULL) != 0)
+    {
+        fprintf(stderr, "Error with pthread_join: %s\n", strerror(errno));
+        exit(EXIT_FAILURE);
+    }
+
+    destroy_game(&state); // destroy context once we're done
     return EXIT_SUCCESS;
 }
