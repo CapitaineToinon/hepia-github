@@ -9,9 +9,10 @@ OUTPUT=bin
 default: build
 
 build: init
+	$(CC) $(DEBUG) $(OPTIONS) -c $(SOURCE)/game.c -o $(OUTPUT)/game.o
 	$(CC) $(DEBUG) $(OPTIONS) -c $(SOURCE)/graphics.c -o $(OUTPUT)/graphics.o
 	$(CC) $(DEBUG) $(OPTIONS) -c $(SOURCE)/utilities.c -o $(OUTPUT)/utilities.o
-	$(CC) $(DEBUG) $(OPTIONS) $(SOURCE)/main.c -o $(OUTPUT)/main $(OUTPUT)/graphics.o $(OUTPUT)/utilities.o $(LIB)
+	$(CC) $(DEBUG) $(OPTIONS) $(SOURCE)/main.c -o $(OUTPUT)/main $(OUTPUT)/game.o $(OUTPUT)/graphics.o $(OUTPUT)/utilities.o $(LIB)
 
 debug: DEBUG = -DDEBUG
 debug: build

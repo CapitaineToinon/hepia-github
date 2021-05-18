@@ -14,6 +14,11 @@ void wait_key_release()
 	}
 }
 
+int msleep(unsigned int tms)
+{
+	return usleep(tms * 1000);
+}
+
 /* return updated value: time_start + offset_ms. wait until current time reaches
  the time value returned. If delta time is negative, do not wait. */
 struct timespec wait_until(struct timespec time_start, unsigned long offset_ms)

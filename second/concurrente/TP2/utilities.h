@@ -7,11 +7,19 @@
 #include <time.h>
 #include <assert.h>
 #include <unistd.h>
+#include <errno.h>
 
 /**
  * Wait for any key to be released (SDL based function)
  */
 void wait_key_release();
+
+/**
+ * msleep -- suspend execution for an interval of time
+ * @param int sleep milliseconds
+ * @return The sleep utility exits 0 on success, and >0 if an error occurs.
+ */
+int msleep(unsigned int tms);
 
 /**
  * Passive waiting from a timestamp for a duration of offset_ms
