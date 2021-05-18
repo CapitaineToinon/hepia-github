@@ -2,55 +2,6 @@
 
 typedef long long LL;
 
-static bool img_init = false;
-
-void get_image_file_size(char *img_filename, int *im_width, int *im_height)
-{
-	SDL_Surface *img_surface;
-	int img_flags = IMG_INIT_PNG;
-
-	if (!img_init)
-	{
-		img_init = true;
-		if (!(IMG_Init(img_flags) & img_flags))
-		{
-			printf("SDL_image could not initialize! SDL_image Error: %s\n", IMG_GetError());
-			exit(1);
-		}
-	}
-
-	assert((img_surface = IMG_Load(img_filename)) != NULL);
-
-	*im_width = img_surface->w;
-	*im_height = img_surface->h;
-	SDL_FreeSurface(img_surface);
-}
-
-SDL_Texture *create_texture_from_image_file(SDL_Renderer *renderer, const char *img_filename, SDL_Rect *img_rect)
-{
-	SDL_Surface *img_surface;
-	SDL_Texture *texture;
-	int img_flags = IMG_INIT_PNG;
-
-	if (!img_init)
-	{
-		img_init = true;
-		if (!(IMG_Init(img_flags) & img_flags))
-		{
-			printf("SDL_image could not initialize! SDL_image Error: %s\n", IMG_GetError());
-			exit(1);
-		}
-	}
-
-	img_surface = IMG_Load(img_filename);
-	SDL_GetClipRect(img_surface, img_rect);
-
-	assert((texture = SDL_CreateTextureFromSurface(renderer, img_surface)) != NULL);
-
-	SDL_FreeSurface(img_surface);
-	return texture;
-}
-
 void wait_key_release()
 {
 	SDL_Event event;
@@ -58,8 +9,7 @@ void wait_key_release()
 	{
 		if (event.type == SDL_KEYDOWN)
 		{
-			printf("key released\n");
-			break;
+			return;
 		}
 	}
 }
