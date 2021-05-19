@@ -1,5 +1,5 @@
 CC=gcc
-OPTIONS=-O0 -W -Wall -Wextra -I/usr/include/ -L./usr/lib/x86_64-linux-gnu # -fsanitize=address -fsanitize=undefined # -fsanitize=leak
+OPTIONS=-O0 -W -Wall -Wextra -std=gnu99 -I/usr/include/ -L./usr/lib/x86_64-linux-gnu # not using those cause apparently, it's normal that SDL doesn't free a lot of things -fsanitize=address -fsanitize=undefined # -fsanitize=leak
 LIB=-lSDL2 -lSDL2_image -lpthread -lm
 
 # CONFIG

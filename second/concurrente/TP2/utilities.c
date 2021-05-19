@@ -2,21 +2,20 @@
 
 typedef long long LL;
 
-void wait_key_release()
-{
-	SDL_Event event;
-	while (SDL_PollEvent(&event))
-	{
-		if (event.type == SDL_KEYDOWN)
-		{
-			return;
-		}
-	}
-}
-
 int msleep(unsigned int tms)
 {
 	return usleep(tms * 1000);
+}
+
+void wait_key_release()
+{
+	SDL_Event event;
+	while (1)
+	{
+		if (SDL_PollEvent(&event))
+			if (event.type == SDL_KEYUP)
+				break;
+	}
 }
 
 /* return updated value: time_start + offset_ms. wait until current time reaches

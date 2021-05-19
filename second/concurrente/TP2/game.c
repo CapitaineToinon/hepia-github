@@ -19,16 +19,3 @@ void destroy_game(game_state_t *state)
 
     destroy_graphics(&state->graphics);
 }
-
-void try_spend_coin(game_state_t *state)
-{
-    if (state == NULL)
-        return;
-
-    if (state->player_coins <= 0)
-        return;
-
-    pthread_mutex_lock(&state->mutex);
-    state->player_coins -= 1;
-    pthread_mutex_unlock(&state->mutex);
-}

@@ -30,6 +30,5 @@ typedef struct game_state_t
 
 int init_game(game_state_t *);
 void destroy_game(game_state_t *);
-void try_spend_coin(game_state_t *);
 
 #endif
