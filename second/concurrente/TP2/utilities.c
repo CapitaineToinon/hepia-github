@@ -18,29 +18,7 @@ void wait_key_release()
 	}
 }
 
-/* return updated value: time_start + offset_ms. wait until current time reaches
- the time value returned. If delta time is negative, do not wait. */
-struct timespec wait_until(struct timespec time_start, unsigned long offset_ms)
-{
-	struct timespec current_time, ret_time;
-	LL end_ns, delay_ns;
-
-	end_ns = (LL)time_start.tv_sec * (LL)1000000000 + (LL)time_start.tv_nsec + (LL)offset_ms * (LL)1000000;
-	ret_time.tv_sec = end_ns / 1000000000;
-	ret_time.tv_nsec = end_ns - ((LL)ret_time.tv_sec * (LL)1000000000);
-	clock_gettime(CLOCK_MONOTONIC, &current_time);
-	delay_ns = end_ns - ((LL)current_time.tv_sec * (LL)1000000000 + (LL)current_time.tv_nsec);
-
-	if (delay_ns > 0)
-	{
-		//printf("wait: %ld us\n", (long)(delay_ns/1000));
-		usleep((unsigned long)(delay_ns / 1000));
-	}
-
-	return ret_time;
-}
-
-long timespec_diff_ms(struct timespec time_start)
+long ms_since(struct timespec time_start)
 {
 	struct timespec current_time;
 	long start_ms;
@@ -49,3 +27,34 @@ long timespec_diff_ms(struct timespec time_start)
 	clock_gettime(CLOCK_MONOTONIC, &current_time);
 	return (long int)((current_time.tv_sec * 1000 + (long)(current_time.tv_nsec / 1000000LL)) - start_ms);
 }
+
+bool are_values_equal(const int a[], int n)
+{
+	while (--n > 0 && a[n] == a[0])
+	{
+	}
+
+	return n == 0;
+}
+
+// from https://www.tutorialspoint.com/c_standard_library/c_function_qsort.htm
+int cmp_int(const void *a, const void *b)
+{
+	return (*(int *)a - *(int *)b);
+}
+
+// from https://www.geeksforgeeks.org/count-number-of-occurrences-or-frequency-in-a-sorted-array/
+int count_occurrences(int arr[], int n, int x)
+{
+	int res = 0;
+	for (int i = 0; i < n; i++)
+		if (x == arr[i])
+			res++;
+	return res;
+}
+
+// long now()
+// {
+// 	struct timespec current_time;
+// 	clock_gettime(CLOCK_MONOTONIC, &current_time);
+// }

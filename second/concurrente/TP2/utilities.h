@@ -22,18 +22,14 @@ void wait_key_release();
 int msleep(unsigned int tms);
 
 /**
- * Passive waiting from a timestamp for a duration of offset_ms
- * @param timespec start timestamp. Can be get at first with clock_gettime(CLOCK_MONOTONIC, &time_start)
- * @param long duration of the passive waiting [ms]
- * @return timespec
- */
-struct timespec wait_until(struct timespec time_start, unsigned long offset_ms);
-
-/**
  * Calculate the difference of time between a timestamp and present time
  * @param timespec past start timestamp. Can be get at first with clock_gettime(CLOCK_MONOTONIC, &time_start)
  * @return long time elapsed between time_start and now [ms]
  */
 long timespec_diff_ms(struct timespec time_start);
+
+bool are_values_equal(const int a[], int n);
+int cmp_int(const void *a, const void *b);
+int count_occurrences(int arr[], int n, int x);
 
 #endif

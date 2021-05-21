@@ -1,19 +1,27 @@
 #include <stdbool.h>
 #include <semaphore.h>
 #include <signal.h>
+#include <math.h>
 #include "utilities.h"
+#include "barrier.h"
 #include "render.h"
 #include "game.h"
 
 #define UPDATE_MS 20
+#define SIMPLE_WIN_COUNT 2
 
 // functions
 void cancel_wheel_func();
 void cancel_display_func();
 void cancel_keyboard_func();
+void cancel_victory_func();
 void try_pthread_cancel(pthread_t);
 int init_signals();
 void signal_handler();
+
+// game functions
+void try_start_wheels();
+void try_stop_wheel();
 
 // listen to SIGINT and SIGHUP to properly cancel the program
 struct sigaction sa_sigint;
@@ -22,11 +30,13 @@ struct sigaction sa_sighup;
 // thread data
 pthread_t display_func_thread = 0;
 pthread_t keyboard_func_thread = 0;
+pthread_t victory_func_thread = 0;
 pthread_t wheel_func_threads[WHEEL_COUNT] = {0};
 
 // wheels data
 sem_t start_mutex;
 sem_t stop_mutex[WHEEL_COUNT];
+pthread_barrier_t finish_barrier;
 int wheel_index = 0;
 int next_wheel_stop = 0;
 
@@ -84,7 +94,13 @@ void *wheel_func(void *vargs)
             msleep(6 - index * 2);
         }
 
-        printf("Wheel %d is done spinning\n", index);
+        // now that we're done spinning, figure out what object
+        // we stopped at
+        int object_index = (state.wheels_offsets[index] / object_height) % OBJECT_COUNT;
+        state.wheels_results[index] = object_index;
+
+        // wait for all wheels to be done spinning
+        pthread_barrier_wait(&finish_barrier);
     }
 
     return NULL;
@@ -140,50 +156,16 @@ void *keyboard_func(void *vargs)
                 printf("ESC or Q pressed\n");
                 cancel_display_func();
                 cancel_wheel_func();
+                cancel_victory_func();
                 quitting = true;
                 break;
             case SDLK_SPACE:
                 printf("SPACE pressed\n");
-
-                // spacebar does nothing if wheels aren't spinning
-                if (state.wheels_state == IDLE)
-                    break;
-
-                // stop the next wheen if possible
-                if (next_wheel_stop < WHEEL_COUNT)
-                {
-                    sem_post(&stop_mutex[next_wheel_stop]);
-                    pthread_mutex_lock(&state.mutex);
-                    next_wheel_stop++;
-                    pthread_mutex_unlock(&state.mutex);
-
-                    // all the wheels are stopped now, we're back to idle state
-                    if (next_wheel_stop >= WHEEL_COUNT)
-                        state.wheels_state = IDLE;
-                }
-
+                try_stop_wheel();
                 break;
             case SDLK_s:
                 printf("S pressed\n");
-
-                // exit if player has no coins left
-                if (state.player_coins <= 0)
-                    break;
-
-                // exit if a game is already going on
-                if (state.wheels_state == SPINNING)
-                    break;
-
-                pthread_mutex_lock(&state.mutex);
-                state.player_coins -= 1;
-                pthread_mutex_unlock(&state.mutex);
-
-                // start all the wheels to spin
-                next_wheel_stop = 0;
-                state.wheels_state = SPINNING;
-                for (int i = 0; i < WHEEL_COUNT; i++)
-                    sem_post(&start_mutex);
-
+                try_start_wheels();
                 break;
             }
 
@@ -211,8 +193,9 @@ int main()
         exit(EXIT_FAILURE);
     }
 
-    // wheel mutexes
+    // init wheel related stuff
     sem_init(&start_mutex, 0, 0); // global mutex to start all the wheels at once
+    pthread_barrier_init(&finish_barrier, NULL, WHEEL_COUNT + 1);
     for (int i = 0; i < WHEEL_COUNT; i++)
         sem_init(&stop_mutex[i], 0, 0); // global mutex to stop each wheel
 
@@ -268,6 +251,84 @@ int main()
     return EXIT_SUCCESS;
 }
 
+void try_start_wheels()
+{
+    // exit if player has no coins left
+    if (state.player_coins <= 0)
+        return;
+
+    // exit if a game is already going on
+    if (state.wheels_state == SPINNING)
+        return;
+
+    pthread_mutex_lock(&state.mutex);
+    state.player_coins -= GAME_PRICE;
+    state.bank_coins += GAME_PRICE;
+    pthread_mutex_unlock(&state.mutex);
+
+    // start all the wheels to spin
+    next_wheel_stop = 0;
+    state.wheels_state = SPINNING;
+    for (int i = 0; i < WHEEL_COUNT; i++)
+        sem_post(&start_mutex);
+}
+
+void try_stop_wheel()
+{
+    // spacebar does nothing if wheels aren't spinning
+    if (state.wheels_state == IDLE)
+        return;
+
+    // stop the next wheel
+    sem_post(&stop_mutex[next_wheel_stop % WHEEL_COUNT]);
+    pthread_mutex_lock(&state.mutex);
+    next_wheel_stop++;
+    pthread_mutex_unlock(&state.mutex);
+
+    if (next_wheel_stop >= WHEEL_COUNT)
+    {
+        pthread_mutex_lock(&state.mutex);
+        next_wheel_stop = 0;
+        pthread_mutex_unlock(&state.mutex);
+
+        // wait for all the wheels to be done spinning
+        printf("Waiting\n");
+        pthread_barrier_wait(&finish_barrier);
+        state.wheels_state = IDLE;
+
+        // detect a potential win
+        // victory conditions are currently hard coded
+        if (are_values_equal(state.wheels_results, WHEEL_COUNT))
+        {
+            // jackpot
+            printf("JACKPOT\n");
+            int half = state.bank_coins / 2;
+            pthread_mutex_lock(&state.mutex);
+            state.player_coins += half;
+            state.bank_coins -= half;
+            pthread_mutex_unlock(&state.mutex);
+        }
+
+        // simple win
+        qsort(state.wheels_results, WHEEL_COUNT, sizeof(int), cmp_int);
+        for (int i = 0; i < OBJECT_COUNT; i++)
+        {
+            if (count_occurrences(state.wheels_results, WHEEL_COUNT, i) == SIMPLE_WIN_COUNT)
+            {
+                printf("WIN\n");
+                pthread_mutex_lock(&state.mutex);
+                state.bank_coins -= 2 * GAME_PRICE;
+                state.player_coins += 2 * GAME_PRICE;
+                pthread_mutex_unlock(&state.mutex);
+                return;
+            }
+        }
+
+        // no victory
+        printf("LOST\n");
+    }
+}
+
 void cancel_wheel_func()
 {
     for (int i = 0; i < WHEEL_COUNT; i++)
@@ -284,6 +345,12 @@ void cancel_display_func()
 void cancel_keyboard_func()
 {
     try_pthread_cancel(keyboard_func_thread);
+}
+
+void cancel_victory_func()
+{
+    pthread_barrier_destroy(&finish_barrier);
+    try_pthread_cancel(victory_func_thread);
 }
 
 void try_pthread_cancel(pthread_t id)
@@ -303,7 +370,7 @@ int init_signals()
     // SIGHUP
     sa_sighup.sa_handler = signal_handler;
     sigemptyset(&sa_sighup.sa_mask);
-    sa_sighup.sa_flags = SA_RESTART;
+    sa_sighup.sa_flags = 0;
 
     if (sigaction(SIGHUP, &sa_sighup, NULL) == -1)
     {
@@ -314,7 +381,7 @@ int init_signals()
     // SIGINT
     sa_sigint.sa_handler = signal_handler;
     sigemptyset(&sa_sigint.sa_mask);
-    sa_sigint.sa_flags = SA_RESTART;
+    sa_sigint.sa_flags = 0;
 
     if (sigaction(SIGINT, &sa_sigint, NULL) == -1)
     {
@@ -329,6 +396,7 @@ void signal_handler()
 {
     // cancel all the thread on signal,
     // main will take care of cleanup
+    cancel_victory_func();
     cancel_wheel_func();
     cancel_display_func();
     cancel_keyboard_func();

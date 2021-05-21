@@ -10,6 +10,7 @@
 #define WHEEL_COUNT 3
 #define PLAYERS_COIN_COUNT 10
 #define BANK_COIN_COUNT 30
+#define GAME_PRICE 1
 
 enum WheelsState
 {
@@ -24,6 +25,7 @@ typedef struct game_state_t
     enum WheelsState wheels_state;
     pthread_t wheels_ids[WHEEL_COUNT];
     int wheels_offsets[WHEEL_COUNT];
+    int wheels_results[WHEEL_COUNT];
     int player_coins;
     int bank_coins;
 } game_state_t;
