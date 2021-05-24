@@ -322,6 +322,15 @@ void set_winning_wheels(int number)
  */
 void cancel_wheel_func()
 {
+    // first request all the wheels to stop to prevent the barrier block
+    // do it WHEEL_COUNT + 1 to be sure the barrier is gone
+    // I do this because I didn't find a way to cancel the barrier
+    // using pthread_cancel. Maybe there is a better way to do this
+    for (int i = 0; i < WHEEL_COUNT + 1; i++)
+    {
+        try_stop_wheel();
+    }
+
     for (int i = 0; i < WHEEL_COUNT; i++)
     {
         try_pthread_cancel(wheel_func_threads[i]);
@@ -478,6 +487,7 @@ int main()
         exit(EXIT_FAILURE);
     }
 
+    pthread_barrier_destroy(&finish_barrier);
     destroy_game(&state); // destroy context once we're done
     return EXIT_SUCCESS;
 }
