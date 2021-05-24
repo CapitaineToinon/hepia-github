@@ -18,7 +18,7 @@ typedef struct game_state_t
     graphics_t graphics;
     bool is_idle;
     pthread_t wheels_ids[WHEEL_COUNT];
-    int wheels_offsets[WHEEL_COUNT];
+    unsigned int wheels_offsets[WHEEL_COUNT];
     int wheels_results[WHEEL_COUNT];
     bool wheels_flicker[WHEEL_COUNT];
     int player_coins;

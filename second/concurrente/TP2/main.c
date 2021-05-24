@@ -294,11 +294,19 @@ void try_stop_wheel()
             if (count_occurrences(copy, WHEEL_COUNT, i) == SIMPLE_WIN_COUNT)
             {
                 pthread_mutex_lock(&state.mutex);
-                state.bank_coins -= 2 * GAME_PRICE;
-                state.player_coins += 2 * GAME_PRICE;
+
+                // prevent winnings bigger than the remaining coins in the bank
+                int wins = 2 * GAME_PRICE;
+                if (wins > state.bank_coins)
+                {
+                    wins = state.bank_coins;
+                }
+
+                state.bank_coins -= wins;
+                state.player_coins += wins;
                 pthread_mutex_unlock(&state.mutex);
                 set_winning_wheels(i);
-                printf("WIN, winning %d coins\n", 2 * GAME_PRICE);
+                printf("WIN, winning %d coins\n", wins);
                 break;
             }
         }
