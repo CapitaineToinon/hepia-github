@@ -2,7 +2,7 @@
 
 int init_game(game_state_t *state)
 {
-    state->wheels_state = IDLE;
+    state->is_idle = true;
     state->player_coins = PLAYERS_COIN_COUNT;
     state->bank_coins = BANK_COIN_COUNT;
 

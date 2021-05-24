@@ -12,17 +12,11 @@
 #define BANK_COIN_COUNT 30
 #define GAME_PRICE 1
 
-enum WheelsState
-{
-    IDLE,
-    SPINNING,
-};
-
 typedef struct game_state_t
 {
     pthread_mutex_t mutex;
     graphics_t graphics;
-    enum WheelsState wheels_state;
+    bool is_idle;
     pthread_t wheels_ids[WHEEL_COUNT];
     int wheels_offsets[WHEEL_COUNT];
     int wheels_results[WHEEL_COUNT];

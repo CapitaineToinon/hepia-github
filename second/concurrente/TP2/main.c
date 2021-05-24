@@ -225,7 +225,7 @@ void try_start_wheels()
         return;
 
     // exit if a game is already going on
-    if (state.wheels_state == SPINNING)
+    if (!state.is_idle)
         return;
 
     set_winning_wheels(-1);
@@ -236,7 +236,7 @@ void try_start_wheels()
 
     // start all the wheels to spin
     next_wheel_stop = 0;
-    state.wheels_state = SPINNING;
+    state.is_idle = false;
     for (int i = 0; i < WHEEL_COUNT; i++)
         sem_post(&start_mutex);
 }
@@ -248,7 +248,7 @@ void try_start_wheels()
 void try_stop_wheel()
 {
     // spacebar does nothing if wheels aren't spinning
-    if (state.wheels_state == IDLE)
+    if (state.is_idle)
         return;
 
     // stop the next wheel
@@ -266,7 +266,7 @@ void try_stop_wheel()
 
         // wait for all the wheels to be done spinning
         pthread_barrier_wait(&finish_barrier);
-        state.wheels_state = IDLE;
+        state.is_idle = true;
 
         // simple win (overly complicated for such a simple check but I didn't want to hardcode the winning condition)
         // count the amount of occurences in the wheels and victory if the count is greated than SIMPLE_WIN_COUNT
@@ -293,7 +293,6 @@ void try_stop_wheel()
 
             if (count_occurrences(copy, WHEEL_COUNT, i) == SIMPLE_WIN_COUNT)
             {
-                printf("WIN\n");
                 pthread_mutex_lock(&state.mutex);
                 state.bank_coins -= 2 * GAME_PRICE;
                 state.player_coins += 2 * GAME_PRICE;
