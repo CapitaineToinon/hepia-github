@@ -26,6 +26,7 @@ typedef struct game_state_t
     pthread_t wheels_ids[WHEEL_COUNT];
     int wheels_offsets[WHEEL_COUNT];
     int wheels_results[WHEEL_COUNT];
+    bool wheels_flicker[WHEEL_COUNT];
     int player_coins;
     int bank_coins;
 } game_state_t;

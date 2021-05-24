@@ -8,6 +8,7 @@ int init_game(game_state_t *state)
 
     memset(state->wheels_offsets, 0, WHEEL_COUNT * sizeof(int));
     memset(state->wheels_results, 0, WHEEL_COUNT * sizeof(int));
+    memset(state->wheels_flicker, false, WHEEL_COUNT * sizeof(bool));
     pthread_mutex_init(&state->mutex, NULL);
 
     return init_graphics(&state->graphics);

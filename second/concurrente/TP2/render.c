@@ -5,6 +5,9 @@ void render_background(game_state_t *state);
 void render_coins(game_state_t *state);
 void render_wheels(game_state_t *state);
 
+unsigned int wheel_flicker = 20;
+unsigned int render_count = 0;
+
 // update the game graphics
 void render_game(game_state_t *state)
 {
@@ -44,9 +47,6 @@ void render_coins(game_state_t *state)
     }
 }
 
-unsigned int wheel_flicker = 50;
-unsigned int render_count = 0;
-
 void render_wheels(game_state_t *state)
 {
     graphics_t g = state->graphics;
@@ -68,11 +68,17 @@ void render_wheels(game_state_t *state)
         dst_rect.y = 410 - object_height / 2; // setup the coord. of the icon in the global renderer
         SDL_RenderCopy(g.renderer, g.objects_texture, &src_rect, &dst_rect);
 
-        SDL_SetRenderDrawColor(g.renderer, 255, 255, 255, 128);
-        SDL_Rect white_square;
-        white_square.h = src_rect.h;
-        white_square.w = src_rect.w;
-        SDL_RenderFillRect(g.renderer, &white_square);
+        // flickering for winning wheels
+        if (state->wheels_flicker[i] && render_count % (wheel_flicker * 2) < wheel_flicker)
+        {
+            SDL_SetRenderDrawColor(g.renderer, 255, 255, 255, 128);
+            SDL_Rect white_square;
+            white_square.x = dst_rect.x;
+            white_square.y = dst_rect.y;
+            white_square.h = object_height;
+            white_square.w = dst_rect.w;
+            SDL_RenderFillRect(g.renderer, &white_square);
+        }
     }
 
     render_count++;

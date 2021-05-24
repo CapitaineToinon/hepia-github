@@ -21,6 +21,7 @@ void signal_handler();
 // game functions
 void try_start_wheels();
 void try_stop_wheel();
+void set_winning_wheels(int number);
 
 // listen to SIGINT and SIGHUP to properly cancel the program
 struct sigaction sa_sigint;
@@ -297,6 +298,7 @@ void try_start_wheels()
     if (state.wheels_state == SPINNING)
         return;
 
+    set_winning_wheels(-1);
     pthread_mutex_lock(&state.mutex);
     state.player_coins -= GAME_PRICE;
     state.bank_coins += GAME_PRICE;
@@ -347,19 +349,25 @@ void try_stop_wheel()
             state.player_coins += half;
             state.bank_coins -= half;
             pthread_mutex_unlock(&state.mutex);
+            set_winning_wheels(state.wheels_results[0]);
+            return;
         }
 
-        // simple win (overfly complicated for such a simple check but I didn't want to hardcode the winning condition)
-        qsort(state.wheels_results, WHEEL_COUNT, sizeof(int), cmp_int);
+        // simple win (overly complicated for such a simple check but I didn't want to hardcode the winning condition)
+        // count the amount of occurences in the wheels and victory if the count is greated than SIMPLE_WIN_COUNT
+        int copy[WHEEL_COUNT];
+        memcpy(copy, state.wheels_results, sizeof(state.wheels_results));
+        qsort(copy, WHEEL_COUNT, sizeof(int), cmp_int);
         for (int i = 0; i < OBJECT_COUNT; i++)
         {
-            if (count_occurrences(state.wheels_results, WHEEL_COUNT, i) == SIMPLE_WIN_COUNT)
+            if (count_occurrences(copy, WHEEL_COUNT, i) == SIMPLE_WIN_COUNT)
             {
                 printf("WIN\n");
                 pthread_mutex_lock(&state.mutex);
                 state.bank_coins -= 2 * GAME_PRICE;
                 state.player_coins += 2 * GAME_PRICE;
                 pthread_mutex_unlock(&state.mutex);
+                set_winning_wheels(i);
                 return;
             }
         }
@@ -367,6 +375,12 @@ void try_stop_wheel()
         // no victory
         printf("LOST\n");
     }
+}
+
+void set_winning_wheels(int number)
+{
+    for (int i = 0; i < WHEEL_COUNT; i++)
+        state.wheels_flicker[i] = state.wheels_results[i] == number;
 }
 
 void cancel_wheel_func()
