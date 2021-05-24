@@ -12,7 +12,7 @@
 /**
  * Wait for any key to be released (SDL based function)
  */
-void wait_key_release();
+void wait_keyup();
 
 /**
  * msleep -- suspend execution for an interval of time
@@ -22,14 +22,31 @@ void wait_key_release();
 int msleep(unsigned int tms);
 
 /**
- * Calculate the difference of time between a timestamp and present time
- * @param timespec past start timestamp. Can be get at first with clock_gettime(CLOCK_MONOTONIC, &time_start)
- * @return long time elapsed between time_start and now [ms]
+ * Check of all values in a int array are equal
+ * 
+ * @param int[] the array to be tested
+ * @param int the size of the array
+ * @return if all values in a int array are equal
  */
-long timespec_diff_ms(struct timespec time_start);
-
 bool are_values_equal(const int a[], int n);
+
+/**
+ * Function that compares to int
+ * 
+ * @param void* pointer to the first int
+ * @param void* pointer to the second int
+ * @return the int result of the compare
+ */
 int cmp_int(const void *a, const void *b);
+
+/**
+ * Counts how many occurrences of an int in an array of int
+ * 
+ * @param int[] the array to be tested
+ * @param int the size of the array
+ * @param int the number to be counted
+ * @return the amount of occurrences found in the array
+ */
 int count_occurrences(int arr[], int n, int x);
 
 #endif

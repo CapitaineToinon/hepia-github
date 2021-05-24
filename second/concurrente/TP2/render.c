@@ -44,6 +44,9 @@ void render_coins(game_state_t *state)
     }
 }
 
+unsigned int wheel_flicker = 50;
+unsigned int render_count = 0;
+
 void render_wheels(game_state_t *state)
 {
     graphics_t g = state->graphics;
@@ -64,5 +67,13 @@ void render_wheels(game_state_t *state)
         dst_rect.x = 85 + (g.objects_rect.w) * i;
         dst_rect.y = 410 - object_height / 2; // setup the coord. of the icon in the global renderer
         SDL_RenderCopy(g.renderer, g.objects_texture, &src_rect, &dst_rect);
+
+        SDL_SetRenderDrawColor(g.renderer, 255, 255, 255, 128);
+        SDL_Rect white_square;
+        white_square.h = src_rect.h;
+        white_square.w = src_rect.w;
+        SDL_RenderFillRect(g.renderer, &white_square);
     }
+
+    render_count++;
 }

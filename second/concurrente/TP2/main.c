@@ -14,7 +14,6 @@
 void cancel_wheel_func();
 void cancel_display_func();
 void cancel_keyboard_func();
-void cancel_victory_func();
 void try_pthread_cancel(pthread_t);
 int init_signals();
 void signal_handler();
@@ -43,6 +42,21 @@ int next_wheel_stop = 0;
 // game state that will be mutated to reflect changes on the UI
 game_state_t state;
 
+/**
+ * Thread function reponsable for spinning a wheel.
+ * Thread is meant to be cancelled with pthread_cancel.
+ * 
+ * Codeflow is :
+ * 1. thread spawns, gets its own index automatically
+ * 2. wait on a semaphore to start all the wheels to spin at the same time
+ * 3. wheel starts spinning, wait for an interput
+ * 4. once interput is requested, keeps spinning until the next object is aligned
+ * 5. wait on a barrier common to all wheels to know when all wheels are done spinning
+ * 6. goes back to 2.
+ * 
+ * @param void* vargs (unused)
+ * @return NULL
+ */
 void *wheel_func(void *vargs)
 {
     (void)vargs; // no need for vargs
@@ -95,7 +109,7 @@ void *wheel_func(void *vargs)
         }
 
         // now that we're done spinning, figure out what object
-        // we stopped at
+        // we stopped at and store the index
         int object_index = (state.wheels_offsets[index] / object_height) % OBJECT_COUNT;
         state.wheels_results[index] = object_index;
 
@@ -106,26 +120,42 @@ void *wheel_func(void *vargs)
     return NULL;
 }
 
+/**
+ * Thread function that refreshed the UI at 50hz, using SDL2.
+ * Thread is meant to be cancelled with pthread_cancel.
+ * If the thread is busy rendering when cancel is requested, the cancel will be delayed until render is done.
+ * 
+ * @param void* vargs (unused)
+ * @return NULL
+ */
 void *display_func(void *vargs)
 {
     (void)vargs;
-    struct timespec ts;
 
     while (true) // thread is meant to be cancelled with pthread_cancel
     {
+        // prevent the thread to be cancelled while rendering, otherwise
+        // destroying assets or doing SDL_Quit will fail
+        pthread_setcancelstate(PTHREAD_CANCEL_DISABLE, NULL);
         render_game(&state);
-        clock_gettime(CLOCK_REALTIME, &ts);
+        pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
         msleep(UPDATE_MS);
     }
 
     return NULL;
 }
 
+/**
+ * Thread function that listens to keyboard events.
+ * Thread is meant to be cancelled with pthread_cancel.
+ * 
+ * @param void* vargs (unused)
+ * @return NULL
+ */
 void *keyboard_func(void *vargs)
 {
     (void)vargs;
     SDL_Event event;
-
     bool quitting = false;
 
     while (!quitting)
@@ -154,9 +184,6 @@ void *keyboard_func(void *vargs)
             case SDLK_q:
             case SDLK_ESCAPE:
                 printf("ESC or Q pressed\n");
-                cancel_display_func();
-                cancel_wheel_func();
-                cancel_victory_func();
                 quitting = true;
                 break;
             case SDLK_SPACE:
@@ -169,10 +196,14 @@ void *keyboard_func(void *vargs)
                 break;
             }
 
-            wait_key_release();
+            wait_keyup();
             break;
         }
     }
+
+    // quit was requested, cancel the other running threads
+    cancel_display_func();
+    cancel_wheel_func();
 
     return NULL;
 }
@@ -251,6 +282,11 @@ int main()
     return EXIT_SUCCESS;
 }
 
+/**
+ * Tries to starts spinning the next wheel, if possible. 
+ * Takes take of spending coins and start spinning all the wheels
+ * at the start of the game.
+ */
 void try_start_wheels()
 {
     // exit if player has no coins left
@@ -273,6 +309,10 @@ void try_start_wheels()
         sem_post(&start_mutex);
 }
 
+/**
+ * Tries stop spinning the next wheel, if possible
+ * Takes take of rewarding the players with coins at the end of the game.
+ */
 void try_stop_wheel()
 {
     // spacebar does nothing if wheels aren't spinning
@@ -309,7 +349,7 @@ void try_stop_wheel()
             pthread_mutex_unlock(&state.mutex);
         }
 
-        // simple win
+        // simple win (overfly complicated for such a simple check but I didn't want to hardcode the winning condition)
         qsort(state.wheels_results, WHEEL_COUNT, sizeof(int), cmp_int);
         for (int i = 0; i < OBJECT_COUNT; i++)
         {
@@ -334,23 +374,20 @@ void cancel_wheel_func()
     for (int i = 0; i < WHEEL_COUNT; i++)
     {
         try_pthread_cancel(wheel_func_threads[i]);
+        printf("cancel_wheel_func OK\n");
     }
 }
 
 void cancel_display_func()
 {
     try_pthread_cancel(display_func_thread);
+    printf("cancel_display_func OK\n");
 }
 
 void cancel_keyboard_func()
 {
     try_pthread_cancel(keyboard_func_thread);
-}
-
-void cancel_victory_func()
-{
-    pthread_barrier_destroy(&finish_barrier);
-    try_pthread_cancel(victory_func_thread);
+    printf("cancel_keyboard_func OK\n");
 }
 
 void try_pthread_cancel(pthread_t id)
@@ -370,7 +407,7 @@ int init_signals()
     // SIGHUP
     sa_sighup.sa_handler = signal_handler;
     sigemptyset(&sa_sighup.sa_mask);
-    sa_sighup.sa_flags = 0;
+    sa_sighup.sa_flags = SA_RESTART;
 
     if (sigaction(SIGHUP, &sa_sighup, NULL) == -1)
     {
@@ -381,7 +418,7 @@ int init_signals()
     // SIGINT
     sa_sigint.sa_handler = signal_handler;
     sigemptyset(&sa_sigint.sa_mask);
-    sa_sigint.sa_flags = 0;
+    sa_sighup.sa_flags = SA_RESTART;
 
     if (sigaction(SIGINT, &sa_sigint, NULL) == -1)
     {
@@ -396,7 +433,6 @@ void signal_handler()
 {
     // cancel all the thread on signal,
     // main will take care of cleanup
-    cancel_victory_func();
     cancel_wheel_func();
     cancel_display_func();
     cancel_keyboard_func();

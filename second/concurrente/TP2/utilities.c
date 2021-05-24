@@ -7,7 +7,7 @@ int msleep(unsigned int tms)
 	return usleep(tms * 1000);
 }
 
-void wait_key_release()
+void wait_keyup()
 {
 	SDL_Event event;
 	while (1)
@@ -18,20 +18,11 @@ void wait_key_release()
 	}
 }
 
-long ms_since(struct timespec time_start)
-{
-	struct timespec current_time;
-	long start_ms;
-
-	start_ms = (LL)time_start.tv_sec * (LL)1000 + (LL)time_start.tv_nsec / 1000000;
-	clock_gettime(CLOCK_MONOTONIC, &current_time);
-	return (long int)((current_time.tv_sec * 1000 + (long)(current_time.tv_nsec / 1000000LL)) - start_ms);
-}
-
 bool are_values_equal(const int a[], int n)
 {
 	while (--n > 0 && a[n] == a[0])
 	{
+		// nothing
 	}
 
 	return n == 0;
@@ -52,9 +43,3 @@ int count_occurrences(int arr[], int n, int x)
 			res++;
 	return res;
 }
-
-// long now()
-// {
-// 	struct timespec current_time;
-// 	clock_gettime(CLOCK_MONOTONIC, &current_time);
-// }
