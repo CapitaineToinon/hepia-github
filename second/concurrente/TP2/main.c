@@ -209,6 +209,206 @@ void *keyboard_func(void *vargs)
     return NULL;
 }
 
+/**
+ * Tries to starts spinning the next wheel, if possible. 
+ * Takes take of spending coins and start spinning all the wheels
+ * at the start of the game.
+ */
+void try_start_wheels()
+{
+    // exit if player has no coins left
+    if (state.player_coins <= 0)
+        return;
+
+    // exit if the bank has no coins left
+    if (state.bank_coins <= 0)
+        return;
+
+    // exit if a game is already going on
+    if (state.wheels_state == SPINNING)
+        return;
+
+    set_winning_wheels(-1);
+    pthread_mutex_lock(&state.mutex);
+    state.player_coins -= GAME_PRICE;
+    state.bank_coins += GAME_PRICE;
+    pthread_mutex_unlock(&state.mutex);
+
+    // start all the wheels to spin
+    next_wheel_stop = 0;
+    state.wheels_state = SPINNING;
+    for (int i = 0; i < WHEEL_COUNT; i++)
+        sem_post(&start_mutex);
+}
+
+/**
+ * Tries stop spinning the next wheel, if possible
+ * Takes take of rewarding the players with coins at the end of the game.
+ */
+void try_stop_wheel()
+{
+    // spacebar does nothing if wheels aren't spinning
+    if (state.wheels_state == IDLE)
+        return;
+
+    // stop the next wheel
+    sem_post(&stop_mutex[next_wheel_stop % WHEEL_COUNT]);
+    pthread_mutex_lock(&state.mutex);
+    next_wheel_stop++;
+    pthread_mutex_unlock(&state.mutex);
+
+    // Handle the end of the game
+    if (next_wheel_stop >= WHEEL_COUNT)
+    {
+        pthread_mutex_lock(&state.mutex);
+        next_wheel_stop = 0;
+        pthread_mutex_unlock(&state.mutex);
+
+        // wait for all the wheels to be done spinning
+        pthread_barrier_wait(&finish_barrier);
+        state.wheels_state = IDLE;
+
+        // simple win (overly complicated for such a simple check but I didn't want to hardcode the winning condition)
+        // count the amount of occurences in the wheels and victory if the count is greated than SIMPLE_WIN_COUNT
+        int copy[WHEEL_COUNT];
+        memcpy(copy, state.wheels_results, sizeof(state.wheels_results));
+        qsort(copy, WHEEL_COUNT, sizeof(int), cmp_int);
+
+        for (int i = 0; i < OBJECT_COUNT; i++)
+        {
+            // detect a potential win
+            // victory conditions are currently hard coded
+            if (count_occurrences(copy, WHEEL_COUNT, i) == WHEEL_COUNT)
+            {
+                // jackpot
+                int half = state.bank_coins / 2;
+                pthread_mutex_lock(&state.mutex);
+                state.player_coins += half;
+                state.bank_coins -= half;
+                pthread_mutex_unlock(&state.mutex);
+                set_winning_wheels(i);
+                printf("JACKPOT, winning %d coins\n", half);
+                break;
+            }
+
+            if (count_occurrences(copy, WHEEL_COUNT, i) == SIMPLE_WIN_COUNT)
+            {
+                printf("WIN\n");
+                pthread_mutex_lock(&state.mutex);
+                state.bank_coins -= 2 * GAME_PRICE;
+                state.player_coins += 2 * GAME_PRICE;
+                pthread_mutex_unlock(&state.mutex);
+                set_winning_wheels(i);
+                printf("WIN, winning %d coins\n", 2 * GAME_PRICE);
+                break;
+            }
+        }
+    }
+}
+
+/**
+ * Set flags for if a wheel is a winning wheel or not.
+ * Used for the UI to add a blinking effect on winning wheels
+ * 
+ * @param int the number of the object that is a winning object
+ */
+void set_winning_wheels(int number)
+{
+    for (int i = 0; i < WHEEL_COUNT; i++)
+        state.wheels_flicker[i] = state.wheels_results[i] == number;
+}
+
+/**
+ * Tries to cancel the wheel threads
+ */
+void cancel_wheel_func()
+{
+    for (int i = 0; i < WHEEL_COUNT; i++)
+    {
+        try_pthread_cancel(wheel_func_threads[i]);
+        printf("cancel_wheel_func OK\n");
+    }
+}
+
+/**
+ * Tries to cancel the display thread
+ */
+void cancel_display_func()
+{
+    try_pthread_cancel(display_func_thread);
+    printf("cancel_display_func OK\n");
+}
+
+/**
+ * Trie to cnacel the keyboard thread
+ */
+void cancel_keyboard_func()
+{
+    try_pthread_cancel(keyboard_func_thread);
+    printf("cancel_keyboard_func OK\n");
+}
+
+/**
+ * Tries to cancel a thread
+ * 
+ * @param pthread_t the pid of the thread to cancel
+ */
+void try_pthread_cancel(pthread_t id)
+{
+    if (id != 0)
+    {
+        if (pthread_cancel(id) != 0)
+        {
+            fprintf(stderr, "Failed to cancel thread with pid %ld: %s\n", id, strerror(errno));
+            // just inform of the error but don't exit or return here
+        }
+    }
+}
+
+/**
+ * Initializes the signal handlers for SIGINT and SIGHUP
+ * 
+ * @return 0 if no error
+ */
+int init_signals()
+{
+    // SIGHUP
+    sa_sighup.sa_handler = signal_handler;
+    sigemptyset(&sa_sighup.sa_mask);
+    sa_sighup.sa_flags = SA_RESTART;
+
+    if (sigaction(SIGHUP, &sa_sighup, NULL) == -1)
+    {
+        fprintf(stderr, "Failed to sigaction: %s.\n", strerror(errno));
+        return EXIT_FAILURE;
+    }
+
+    // SIGINT
+    sa_sigint.sa_handler = signal_handler;
+    sigemptyset(&sa_sigint.sa_mask);
+    sa_sighup.sa_flags = SA_RESTART;
+
+    if (sigaction(SIGINT, &sa_sigint, NULL) == -1)
+    {
+        fprintf(stderr, "Failed to sigaction: %s.\n", strerror(errno));
+        return EXIT_FAILURE;
+    }
+
+    return EXIT_SUCCESS;
+}
+
+/**
+ * Cancel all running threads upon signal 
+ */
+void signal_handler()
+{
+    // cancel all the thread on signal,
+    // main will take care of cleanup
+    cancel_wheel_func();
+    cancel_display_func();
+    cancel_keyboard_func();
+}
+
 int main()
 {
     // listen to signals to properly close the game
@@ -281,173 +481,4 @@ int main()
 
     destroy_game(&state); // destroy context once we're done
     return EXIT_SUCCESS;
-}
-
-/**
- * Tries to starts spinning the next wheel, if possible. 
- * Takes take of spending coins and start spinning all the wheels
- * at the start of the game.
- */
-void try_start_wheels()
-{
-    // exit if player has no coins left
-    if (state.player_coins <= 0)
-        return;
-
-    // exit if a game is already going on
-    if (state.wheels_state == SPINNING)
-        return;
-
-    set_winning_wheels(-1);
-    pthread_mutex_lock(&state.mutex);
-    state.player_coins -= GAME_PRICE;
-    state.bank_coins += GAME_PRICE;
-    pthread_mutex_unlock(&state.mutex);
-
-    // start all the wheels to spin
-    next_wheel_stop = 0;
-    state.wheels_state = SPINNING;
-    for (int i = 0; i < WHEEL_COUNT; i++)
-        sem_post(&start_mutex);
-}
-
-/**
- * Tries stop spinning the next wheel, if possible
- * Takes take of rewarding the players with coins at the end of the game.
- */
-void try_stop_wheel()
-{
-    // spacebar does nothing if wheels aren't spinning
-    if (state.wheels_state == IDLE)
-        return;
-
-    // stop the next wheel
-    sem_post(&stop_mutex[next_wheel_stop % WHEEL_COUNT]);
-    pthread_mutex_lock(&state.mutex);
-    next_wheel_stop++;
-    pthread_mutex_unlock(&state.mutex);
-
-    if (next_wheel_stop >= WHEEL_COUNT)
-    {
-        pthread_mutex_lock(&state.mutex);
-        next_wheel_stop = 0;
-        pthread_mutex_unlock(&state.mutex);
-
-        // wait for all the wheels to be done spinning
-        printf("Waiting\n");
-        pthread_barrier_wait(&finish_barrier);
-        state.wheels_state = IDLE;
-
-        // detect a potential win
-        // victory conditions are currently hard coded
-        if (are_values_equal(state.wheels_results, WHEEL_COUNT))
-        {
-            // jackpot
-            printf("JACKPOT\n");
-            int half = state.bank_coins / 2;
-            pthread_mutex_lock(&state.mutex);
-            state.player_coins += half;
-            state.bank_coins -= half;
-            pthread_mutex_unlock(&state.mutex);
-            set_winning_wheels(state.wheels_results[0]);
-            return;
-        }
-
-        // simple win (overly complicated for such a simple check but I didn't want to hardcode the winning condition)
-        // count the amount of occurences in the wheels and victory if the count is greated than SIMPLE_WIN_COUNT
-        int copy[WHEEL_COUNT];
-        memcpy(copy, state.wheels_results, sizeof(state.wheels_results));
-        qsort(copy, WHEEL_COUNT, sizeof(int), cmp_int);
-        for (int i = 0; i < OBJECT_COUNT; i++)
-        {
-            if (count_occurrences(copy, WHEEL_COUNT, i) == SIMPLE_WIN_COUNT)
-            {
-                printf("WIN\n");
-                pthread_mutex_lock(&state.mutex);
-                state.bank_coins -= 2 * GAME_PRICE;
-                state.player_coins += 2 * GAME_PRICE;
-                pthread_mutex_unlock(&state.mutex);
-                set_winning_wheels(i);
-                return;
-            }
-        }
-
-        // no victory
-        printf("LOST\n");
-    }
-}
-
-void set_winning_wheels(int number)
-{
-    for (int i = 0; i < WHEEL_COUNT; i++)
-        state.wheels_flicker[i] = state.wheels_results[i] == number;
-}
-
-void cancel_wheel_func()
-{
-    for (int i = 0; i < WHEEL_COUNT; i++)
-    {
-        try_pthread_cancel(wheel_func_threads[i]);
-        printf("cancel_wheel_func OK\n");
-    }
-}
-
-void cancel_display_func()
-{
-    try_pthread_cancel(display_func_thread);
-    printf("cancel_display_func OK\n");
-}
-
-void cancel_keyboard_func()
-{
-    try_pthread_cancel(keyboard_func_thread);
-    printf("cancel_keyboard_func OK\n");
-}
-
-void try_pthread_cancel(pthread_t id)
-{
-    if (id != 0)
-    {
-        if (pthread_cancel(id) != 0)
-        {
-            fprintf(stderr, "Failed to cancel thread with pid %ld: %s\n", id, strerror(errno));
-            // just inform of the error but don't exit or return here
-        }
-    }
-}
-
-int init_signals()
-{
-    // SIGHUP
-    sa_sighup.sa_handler = signal_handler;
-    sigemptyset(&sa_sighup.sa_mask);
-    sa_sighup.sa_flags = SA_RESTART;
-
-    if (sigaction(SIGHUP, &sa_sighup, NULL) == -1)
-    {
-        fprintf(stderr, "Failed to sigaction: %s.\n", strerror(errno));
-        return EXIT_FAILURE;
-    }
-
-    // SIGINT
-    sa_sigint.sa_handler = signal_handler;
-    sigemptyset(&sa_sigint.sa_mask);
-    sa_sighup.sa_flags = SA_RESTART;
-
-    if (sigaction(SIGINT, &sa_sigint, NULL) == -1)
-    {
-        fprintf(stderr, "Failed to sigaction: %s.\n", strerror(errno));
-        return EXIT_FAILURE;
-    }
-
-    return EXIT_SUCCESS;
-}
-
-void signal_handler()
-{
-    // cancel all the thread on signal,
-    // main will take care of cleanup
-    cancel_wheel_func();
-    cancel_display_func();
-    cancel_keyboard_func();
 }

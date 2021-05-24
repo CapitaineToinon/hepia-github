@@ -3,6 +3,13 @@
 
 #include "game.h"
 
+/**
+ * Render the UI
+ * 
+ * - Background
+ * - Coins
+ * - Wheels
+ */
 void render_game(game_state_t *);
 
 #endif
