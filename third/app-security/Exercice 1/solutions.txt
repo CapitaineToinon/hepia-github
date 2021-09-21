@@ -1,0 +1,7 @@
+1: 
+
+./crackme1 main_lib.c
+
+2:
+
+./crackme2 "San Francisco"
