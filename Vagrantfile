@@ -43,19 +43,20 @@ Vagrant.configure("2") do |config|
   # the path on the host to the actual folder. The second argument is
   # the path on the guest to mount the folder. And the optional third
   # argument is a set of non-required options.
-  config.vm.synced_folder ".", "/home/vagrant/data"
+  config.vm.synced_folder ".", "/home/vagrant/data", owner: "vagrant", group: "vagrant", mount_options:  ['dmode=775', 'fmode=775']
 
   # Provider-specific configuration so you can fine-tune various
   # backing providers for Vagrant. These expose provider-specific options.
   # Example for VirtualBox:
   #
-  # config.vm.provider "virtualbox" do |vb|
-  #   # Display the VirtualBox GUI when booting the machine
-  #   vb.gui = true
-  #
-  #   # Customize the amount of memory on the VM:
-  #   vb.memory = "1024"
-  # end
+  config.vm.provider "virtualbox" do |vb|
+    # Display the VirtualBox GUI when booting the machine
+    # vb.gui = true
+  
+    # Customize the amount of memory on the VM:
+    vb.memory = "2048"
+    vb.cpus = 6
+  end
   #
   # View the documentation for the provider you are using for more
   # information on available options.
@@ -65,6 +66,14 @@ Vagrant.configure("2") do |config|
   # documentation for more information about their specific syntax and use.
   config.vm.provision "shell", inline: <<-SHELL
     apt-get update
-    apt-get install -y git build-essential manpages-dev
+    apt-get install -y imagemagick shellcheck git build-essential manpages-dev libsdl2-dev libsdl2-image-dev nasm
+    apt-get install -y linux-headers-`uname -r`
+    apt-get install -y zsh
+    chsh -s /bin/zsh vagrant
+  SHELL
+
+  config.vm.provision "shell", privileged: false, inline: <<-SHELL
+    apt-get update
+    wget --no-check-certificate https://github.com/robbyrussell/oh-my-zsh/raw/master/tools/install.sh -O - | sh
   SHELL
 end
