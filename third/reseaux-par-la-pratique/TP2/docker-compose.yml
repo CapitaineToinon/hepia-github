@@ -1,0 +1,10 @@
+version: '3'
+
+services:
+  server:
+    image: python:3
+    command: python3 -m http.server 8080 --directory /tmp/http-server
+    ports:
+      - "8080:8080"
+    volumes:
+      - $PWD/data:/tmp/http-server

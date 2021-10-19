@@ -3,7 +3,7 @@
 from random import choice, randint
 
 
-def gcd(a, b):
+def gcd(a: int, b: int):
     """
     Calculate the greatest common divisor of a and b
     """
@@ -19,7 +19,7 @@ def modexp(base, exp, modulus):
     return pow(base, exp, modulus)
 
 
-def generate_primes(n):
+def generate_primes(n: int) -> List[int]:
     """
     Generate all the primes from 2 to n using the eratosthene algorythm
     """
@@ -35,7 +35,7 @@ def generate_primes(n):
     return [n for n in numbers[2:] if n is not False]
 
 
-def random_prime(digits):
+def random_prime(digits: int) -> int:
     """
     Generate a random prime of n digits
     """
