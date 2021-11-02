@@ -11,8 +11,6 @@ services:
       MYSQL_USER: root
       MYSQL_DB: myapp
       MYSQL_PASSWORD: example
-    ports:
-      - 3000:3000
     expose:
       - "3000"
     depends_on:
