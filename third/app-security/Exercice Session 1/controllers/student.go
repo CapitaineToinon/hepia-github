@@ -6,8 +6,6 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/google/uuid"
-
 	"github.com/gin-gonic/gin"
 )
 
@@ -21,9 +19,9 @@ func GetStudents(c *gin.Context) {
 }
 
 func PostStudents(c *gin.Context) {
-	var student model.Student
+	var registerValue model.StudentRegister
 
-	if err := c.Bind(&student); err != nil {
+	if err := c.Bind(&registerValue); err != nil {
 		log.Println("Unable to bind value", err)
 		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
 			"message": err.Error(),
@@ -31,7 +29,12 @@ func PostStudents(c *gin.Context) {
 		return
 	}
 
-	student.UUID = uuid.New()
+	student := model.Student{
+		Lastname: registerValue.Lastname,
+		Name:     registerValue.Name,
+		Filiere:  registerValue.Filiere,
+	}
+
 	result := database.DB.Create(&student)
 
 	if result.Error != nil {
@@ -40,7 +43,7 @@ func PostStudents(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusCreated, gin.H{
-		"message": "ok",
+	c.JSON(http.StatusCreated, SuccessResponse{
+		Data: student,
 	})
 }

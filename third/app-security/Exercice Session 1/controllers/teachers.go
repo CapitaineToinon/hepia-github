@@ -7,7 +7,6 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 )
 
 func GetTeachers(c *gin.Context) {
@@ -20,17 +19,19 @@ func GetTeachers(c *gin.Context) {
 }
 
 func PostTeachers(c *gin.Context) {
-	var teacher model.Teacher
+	var registerValue model.TeacherRegister
 
-	if err := c.Bind(&teacher); err != nil {
+	if err := c.BindJSON(&registerValue); err != nil {
 		log.Println("Unable to bind value", err)
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{
-			"message": err.Error(),
-		})
 		return
 	}
 
-	teacher.UUID = uuid.New()
+	teacher := model.Teacher{
+		Lastname: registerValue.Lastname,
+		Name:     registerValue.Name,
+		Class:    registerValue.Class,
+	}
+
 	result := database.DB.Create(&teacher)
 
 	if result.Error != nil {
@@ -39,7 +40,7 @@ func PostTeachers(c *gin.Context) {
 		return
 	}
 
-	c.JSON(http.StatusCreated, gin.H{
-		"message": "ok",
+	c.JSON(http.StatusCreated, SuccessResponse{
+		Data: teacher,
 	})
 }

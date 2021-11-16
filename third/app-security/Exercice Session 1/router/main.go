@@ -7,7 +7,9 @@ import (
 )
 
 func GetRouter() *gin.Engine {
-	r := gin.Default()
+	r := gin.New()
+	r.Use(gin.Logger())
+	r.Use(gin.Recovery())
 
 	r.GET("/students", controllers.GetStudents)
 	r.GET("/teachers", controllers.GetTeachers)
