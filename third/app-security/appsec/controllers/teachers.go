@@ -9,7 +9,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func GetTeachers(c *gin.Context) {
+func GetTeachersHandler(c *gin.Context) {
 	var teachers []model.Teacher
 	database.DB.Model(model.Teacher{}).Find(&teachers)
 
@@ -18,7 +18,7 @@ func GetTeachers(c *gin.Context) {
 	})
 }
 
-func PostTeachers(c *gin.Context) {
+func PostTeachersHandler(c *gin.Context) {
 	var registerValue model.TeacherRegister
 
 	if err := c.BindJSON(&registerValue); err != nil {

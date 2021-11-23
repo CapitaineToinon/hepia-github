@@ -9,12 +9,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func GetStudents(c *gin.Context) {
-	if err := verify(c); err != nil {
-		c.AbortWithStatus(http.StatusUnauthorized)
-		return
-	}
-
+func GetStudentsHandler(c *gin.Context) {
 	var students []model.Student
 	database.DB.Model(model.Student{}).Find(&students)
 
@@ -23,7 +18,7 @@ func GetStudents(c *gin.Context) {
 	})
 }
 
-func PostStudents(c *gin.Context) {
+func PostStudentsHandler(c *gin.Context) {
 	var registerValue model.StudentRegister
 
 	if err := c.Bind(&registerValue); err != nil {

@@ -2,6 +2,7 @@ package router
 
 import (
 	"appSec/myApp/controllers"
+	"appSec/myApp/middlewares"
 
 	"github.com/gin-gonic/gin"
 )
@@ -11,13 +12,21 @@ func GetRouter() *gin.Engine {
 	r.Use(gin.Logger())
 	r.Use(gin.Recovery())
 
-	r.GET("/login", controllers.Login)
+	public := r.Group("/auth")
+	{
+		public.GET("/login", controllers.LoginHandler)
+		public.GET("/logout", controllers.LogoutHandler)
+		public.GET("/callback", controllers.AuthCodeCallbackHandler)
+	}
 
-	r.GET("/students", controllers.GetStudents)
-	r.GET("/teachers", controllers.GetTeachers)
-
-	r.POST("/students", controllers.PostStudents)
-	r.POST("/teachers", controllers.PostTeachers)
+	authorized := r.Group("/")
+	authorized.Use(middlewares.AuthMiddleware())
+	{
+		authorized.GET("/students", controllers.GetStudentsHandler)
+		authorized.GET("/teachers", controllers.GetTeachersHandler)
+		authorized.POST("/students", controllers.PostStudentsHandler)
+		authorized.POST("/teachers", controllers.PostTeachersHandler)
+	}
 
 	return r
 }
