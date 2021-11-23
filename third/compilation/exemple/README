@@ -1,0 +1,18 @@
+**************************************************
+* COMPILATION                                    *
+**************************************************
+ Pour compiler:
+ 
+Exeuter la commande (fichier d'entrée par défaut : test.txt): 
+	make
+	make TESTFILE=deuxieme_test.txt
+
+**************************************************
+* EXECUTION                                      *
+**************************************************
+
+Pour executer le programme sur le fichier test.txt
+
+Executer la commande : 
+
+	 java -classpath java-cup-11a.jar:. test test.txt

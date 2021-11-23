@@ -1,0 +1,39 @@
+
+import java_cup.runtime.*;
+import java.util.Vector;
+import java.io.*;
+
+
+parser code {:
+public int t;
+:}
+
+
+terminal VIRGULE, SOMME;
+terminal POINT, FIN;
+terminal Integer NOMBRE;
+
+non terminal Integer somme_entiers;
+non terminal liste, texte;
+
+
+texte ::= 
+	liste texte | FIN {:
+		System.out.println("Merci, bye and see you ");
+	:}
+;
+
+liste ::= 
+	SOMME somme_entiers:t POINT {:	
+		System.out.println(" La somme est : ");
+		System.out.println(t.intValue());
+	:}
+;
+
+somme_entiers ::= 
+	somme_entiers:s VIRGULE NOMBRE:n  {:
+		RESULT = new Integer(s.intValue() + n.intValue());
+	:} | NOMBRE:n  {:
+		RESULT = new Integer(n.intValue());
+	:}
+;

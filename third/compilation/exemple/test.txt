@@ -1,0 +1,4 @@
+somme 3,4,5.
+somme 1,2,3.
+somme 1.
+$

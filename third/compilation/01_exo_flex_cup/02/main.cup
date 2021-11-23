@@ -1,0 +1,23 @@
+
+import java_cup.runtime.*;
+import java.util.Vector;
+import java.io.*;
+
+parser code {:
+  public int t;
+:}
+
+terminal PLUS_SIGN, MINUS_SIGN, MULTIPLY_SIGN, DIVIDE_SIGN;
+terminal Integer NUMBER;
+
+non terminal Integer somme;
+non terminal Integer substraction;
+non terminal Integer division;
+non terminal Integer multiplication;
+
+start with somme;
+
+somme ::= NUMBER:a PLUS_SIGN NUMBER:b {:
+  System.out.println("[java-cup] Found an addition with a and b");
+  System.out.println("[java-cup] result: " + (a.intValue() + b.intValue()));
+:};
