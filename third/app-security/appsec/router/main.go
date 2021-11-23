@@ -4,6 +4,7 @@ import (
 	"appSec/myApp/controllers"
 	"appSec/myApp/middlewares"
 
+	"github.com/gin-contrib/static"
 	"github.com/gin-gonic/gin"
 )
 
@@ -11,6 +12,9 @@ func GetRouter() *gin.Engine {
 	r := gin.New()
 	r.Use(gin.Logger())
 	r.Use(gin.Recovery())
+	r.Use(middlewares.CorsMiddleware())
+
+	r.Use(static.Serve("/", static.LocalFile("./frontend/dist", true)))
 
 	public := r.Group("/auth")
 	{
@@ -27,6 +31,10 @@ func GetRouter() *gin.Engine {
 		authorized.POST("/students", controllers.PostStudentsHandler)
 		authorized.POST("/teachers", controllers.PostTeachersHandler)
 	}
+
+	r.NoRoute(func(c *gin.Context) {
+		c.File("./frontend/dist/index.html")
+	})
 
 	return r
 }
