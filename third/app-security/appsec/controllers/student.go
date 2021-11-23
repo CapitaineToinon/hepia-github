@@ -10,6 +10,11 @@ import (
 )
 
 func GetStudents(c *gin.Context) {
+	if err := verify(c); err != nil {
+		c.AbortWithStatus(http.StatusUnauthorized)
+		return
+	}
+
 	var students []model.Student
 	database.DB.Model(model.Student{}).Find(&students)
 

@@ -7,10 +7,13 @@ import (
 	"os/signal"
 
 	"appSec/myApp/database"
+	"appSec/myApp/env"
 	"appSec/myApp/router"
 )
 
 func main() {
+	port := env.Get("GO_PORT")
+
 	if err := database.Init(); err != nil {
 		log.Fatal(err)
 		panic(err)
@@ -19,7 +22,8 @@ func main() {
 	r := router.GetRouter()
 
 	go func() {
-		if err := http.ListenAndServe(":3000", r); err != nil {
+		log.Print("Listening on port " + port)
+		if err := http.ListenAndServe(":"+port, r); err != nil {
 			log.Fatal(err)
 			panic(err)
 		}

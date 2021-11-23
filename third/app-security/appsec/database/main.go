@@ -1,9 +1,9 @@
 package database
 
 import (
+	"appSec/myApp/env"
 	"appSec/myApp/model"
 	"fmt"
-	"os"
 
 	_ "github.com/joho/godotenv/autoload"
 
@@ -22,11 +22,11 @@ type dbConfig struct {
 }
 
 var config = dbConfig{
-	os.Getenv("MYSQL_HOST"),
-	os.Getenv("MYSQL_PORT"),
-	os.Getenv("MYSQL_USER"),
-	os.Getenv("MYSQL_DB"),
-	os.Getenv("MYSQL_PASSWORD"),
+	env.Get("MYSQL_HOST"),
+	env.Get("MYSQL_PORT"),
+	env.Get("MYSQL_USER"),
+	env.Get("MYSQL_DB"),
+	env.Get("MYSQL_PASSWORD"),
 }
 
 var dns = fmt.Sprintf(
