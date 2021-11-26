@@ -1,40 +1,39 @@
 package middlewares
 
 import (
-	"appSec/myApp/auth"
-	"fmt"
+	"appSec/myApp/env"
 	"log"
 	"net/http"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	jwtverifier "github.com/okta/okta-jwt-verifier-golang"
 )
 
+var (
+	clientID         = env.Get("OKTA_CLIENT_ID")
+	issuer           = env.Get("OKTA_ISSUER")
+	claimsToValidate = map[string]string{
+		"aud": "api://default",
+		"cid": clientID,
+	}
+)
+
 func AuthMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		session, err := auth.SessionStore.Get(c.Request, "okta-hosted-login-session-store")
+		authHeader := c.GetHeader("Authorization")
 
-		if err != nil {
-			log.Println(err)
-			c.AbortWithStatus(http.StatusInternalServerError)
+		if authHeader == "" {
+			c.AbortWithStatus(http.StatusBadRequest)
 			return
 		}
 
-		raw := session.Values["access_token"]
-
-		if raw == nil {
-			log.Println(fmt.Errorf("access_token is malformed, login out just in case"))
-			session.Options.MaxAge = -1
-			session.Save(c.Request, c.Writer)
-			c.AbortWithStatus(http.StatusUnauthorized)
-			return
-		}
-
-		token := raw.(string)
+		tokenParts := strings.Split(authHeader, "Bearer ")
+		token := tokenParts[1]
 
 		jwtVerifierSetup := jwtverifier.JwtVerifier{
-			Issuer:           auth.Issuer,
-			ClaimsToValidate: auth.ClaimsToValidate,
+			Issuer:           issuer,
+			ClaimsToValidate: claimsToValidate,
 		}
 
 		if _, err := jwtVerifierSetup.New().VerifyAccessToken(token); err != nil {

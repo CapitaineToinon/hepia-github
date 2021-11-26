@@ -10,8 +10,6 @@ services:
       MYSQL_USER: ${MYSQL_USER}
       MYSQL_DB: ${MYSQL_DB}
       MYSQL_PASSWORD: ${MYSQL_PASSWORD}
-    expose:
-      - "3000"
     depends_on:
       db:
         condition: service_healthy
