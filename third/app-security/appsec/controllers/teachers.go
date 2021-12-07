@@ -13,8 +13,8 @@ func GetTeachersHandler(c *gin.Context) {
 	var teachers []model.Teacher
 	database.DB.Model(model.Teacher{}).Find(&teachers)
 
-	c.JSON(http.StatusOK, gin.H{
-		"data": teachers,
+	c.JSON(http.StatusOK, SuccessResponse{
+		Data: teachers,
 	})
 }
 
@@ -23,6 +23,9 @@ func PostTeachersHandler(c *gin.Context) {
 
 	if err := c.BindJSON(&registerValue); err != nil {
 		log.Println("Unable to bind value", err)
+		c.AbortWithStatusJSON(http.StatusBadRequest, ErrorResponse{
+			Error: err.Error(),
+		})
 		return
 	}
 

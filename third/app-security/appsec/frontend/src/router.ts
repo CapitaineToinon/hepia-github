@@ -1,5 +1,5 @@
-import { createRouter, createWebHistory } from "vue-router";
 import { LoginCallback } from "@okta/okta-vue";
+import { createRouter, createWebHistory } from "vue-router";
 import Home from "./pages/index.vue";
 import Students from "./pages/Students.vue";
 import Teachers from "./pages/Teachers.vue";

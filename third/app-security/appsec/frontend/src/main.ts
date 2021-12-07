@@ -1,10 +1,10 @@
-import './index.css';
+import "./index.css";
 import App from "./App.vue";
 import { createApp } from "vue";
 import { router } from "./router";
 import { OktaAuth } from "@okta/okta-auth-js";
 import OktaVue from "@okta/okta-vue";
-import { createPinia } from 'pinia'
+import { createPinia } from "pinia";
 
 const oktaAuth = new OktaAuth({
   issuer: "https://dev-29413258.okta.com/oauth2/default",
@@ -13,8 +13,8 @@ const oktaAuth = new OktaAuth({
   scopes: ["openid", "profile", "email"],
 });
 
-const app = createApp(App);
-app.use(createPinia())
-app.use(OktaVue, { oktaAuth });
-app.use(router);
-app.mount("#app");
+createApp(App)
+  .use(createPinia())
+  .use(OktaVue, { oktaAuth })
+  .use(router)
+  .mount("#app");

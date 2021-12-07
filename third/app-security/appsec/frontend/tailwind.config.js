@@ -1,18 +1,17 @@
 module.exports = {
   mode: "jit",
-  purge: ['./index.html', './src/**/*.{vue,js,ts,jsx,tsx}'],
-  darkMode: false, // or 'media' or 'class'
+  purge: ["./index.html", "./src/**/*.{vue,js,ts,jsx,tsx}"],
+  darkMode: false, // using daisy for theme switching
   theme: {
-    extend: {},
+    fontFamily: {
+      sans: "Quicksand, Helvetica, Arial, sans-serif",
+    },
   },
   variants: {
     extend: {},
   },
-  plugins: [require("daisyui")],
   daisyui: {
-    styled: true,
-    themes: [
-      'forest',
-    ],
-  }
+    themes: ["dark", "light"],
+  },
+  plugins: [require("daisyui")],
 };

@@ -1,18 +1,12 @@
 <script setup lang="ts">
-import { watchEffect } from "vue";
-import {
-  useAuthStateStore,
-  useUserClaimsStore,
-} from "../stores/auth";
+import { useAuthStateStore, useUserClaimsStore } from "../stores/auth";
 
 const claimsStore = useUserClaimsStore();
 const stateStore = useAuthStateStore();
-
-watchEffect(() => console.log(claimsStore.userClaims));
 </script>
 
 <template>
-  <div class="hero min-h-screen bg-base-200">
+  <div class="hero min-h-screen bg-base-100">
     <div class="text-center hero-content">
       <div v-if="claimsStore.userClaims" class="max-w-md">
         <h1 class="mb-5 text-5xl font-bold">

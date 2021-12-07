@@ -6,9 +6,9 @@ import (
 
 type Student struct {
 	gorm.Model
-	Lastname string
-	Name     string
-	Filiere  string
+	Lastname string `json:"lastname"`
+	Name     string `json:"name"`
+	Filiere  string `json:"filiere"`
 }
 
 type StudentRegister struct {

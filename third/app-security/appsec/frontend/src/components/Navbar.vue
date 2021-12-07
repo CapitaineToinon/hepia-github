@@ -1,14 +1,23 @@
 <script setup lang="ts">
+import { useDark, useToggle } from "@vueuse/core";
 import { computed, watchEffect } from "vue";
-import { useRoute } from "vue-router";
 import { useAuthStateStore, useAuthStore } from "../stores/auth";
+
+const isDark = useDark({
+  selector: "html",
+  attribute: "data-theme",
+  valueDark: "dark",
+  valueLight: "light",
+});
+
+const toggle = useToggle(isDark);
 
 const store = useAuthStateStore();
 const authStore = useAuthStore();
 
-const buttonText = computed(() => {
-  return store.authState.isAuthenticated ? "Sign out" : "Sign in";
-});
+const buttonText = computed(() =>
+  store.authState.isAuthenticated ? "Sign out" : "Sign in"
+);
 
 watchEffect(() => console.log(store.authState.isAuthenticated));
 
@@ -21,7 +30,7 @@ function onClick() {
 
 <template>
   <div class="navbar" :class="{ 'is-fixed': $route.name === 'home' }">
-    <div class="flex-1">
+    <div class="flex-1 flex gap-3">
       <RouterLink to="/" class="btn btn-square btn-ghost">
         <svg
           xmlns="http://www.w3.org/2000/svg"
@@ -38,20 +47,19 @@ function onClick() {
           />
         </svg>
       </RouterLink>
-      <div class="flex-1 px-2 mx-2 w-full">
-        <div class="items-stretch lg:flex">
-          <RouterLink to="/students" class="btn btn-ghost btn-sm rounded-btn">
-            Students
-          </RouterLink>
-          <RouterLink to="/teachers" class="btn btn-ghost btn-sm rounded-btn">
-            Teachers
-          </RouterLink>
-        </div>
-      </div>
+      <RouterLink to="/students" class="btn btn-ghost btn-sm rounded-btn">
+        Students
+      </RouterLink>
+      <RouterLink to="/teachers" class="btn btn-ghost btn-sm rounded-btn">
+        Teachers
+      </RouterLink>
     </div>
-    <div class="flex-none">
+    <div class="flex-none flex gap-3">
       <button @click="onClick" class="btn btn-ghost btn-sm rounded-btn">
         {{ buttonText }}
+      </button>
+      <button class="btn btn-square btn-ghost text-2xl" @click="() => toggle()">
+        {{ isDark ? "🌝" : "🌚" }}
       </button>
     </div>
   </div>
@@ -59,14 +67,11 @@ function onClick() {
 
 <style lang="postcss" scoped>
 .navbar {
-  @apply mb-2 text-neutral-content;
+  @apply mb-6 text-base-content;
+  @apply shadow-md bg-base-300;
 
   &.is-fixed {
-    @apply bg-transparent fixed top-0 left-0 right-0;
-  }
-
-  &:not(.is-fixed) {
-    @apply shadow-lg bg-neutral;
+    @apply fixed top-0 left-0 right-0;
   }
 }
 
