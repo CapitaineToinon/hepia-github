@@ -2,6 +2,7 @@
 import { useDark, useToggle } from "@vueuse/core";
 import { computed, watchEffect } from "vue";
 import { useAuthStateStore, useAuthStore } from "../stores/auth";
+import { HomeIcon, MoonIcon, SunIcon } from "@heroicons/vue/outline";
 
 const isDark = useDark({
   selector: "html",
@@ -32,20 +33,7 @@ function onClick() {
   <div class="navbar" :class="{ 'is-fixed': $route.name === 'home' }">
     <div class="flex-1 flex gap-3">
       <RouterLink to="/" class="btn btn-square btn-ghost">
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          class="h-6 w-6"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-        >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
-          />
-        </svg>
+        <HomeIcon class="h-6 w-6" />
       </RouterLink>
       <RouterLink to="/students" class="btn btn-ghost btn-sm rounded-btn">
         Students
@@ -53,13 +41,17 @@ function onClick() {
       <RouterLink to="/teachers" class="btn btn-ghost btn-sm rounded-btn">
         Teachers
       </RouterLink>
+      <RouterLink to="/token" class="btn btn-ghost btn-sm rounded-btn">
+        Token
+      </RouterLink>
     </div>
     <div class="flex-none flex gap-3">
       <button @click="onClick" class="btn btn-ghost btn-sm rounded-btn">
         {{ buttonText }}
       </button>
       <button class="btn btn-square btn-ghost text-2xl" @click="() => toggle()">
-        {{ isDark ? "🌝" : "🌚" }}
+        <MoonIcon class="h-6 w-6" :class="{ hidden: isDark }" />
+        <SunIcon class="h-6 w-6" :class="{ hidden: !isDark }" />
       </button>
     </div>
   </div>

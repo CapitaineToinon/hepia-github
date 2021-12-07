@@ -23,29 +23,27 @@ var (
 
 func AuthMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		if false {
-			authHeader := c.GetHeader("Authorization")
+		authHeader := c.GetHeader("Authorization")
 
-			if authHeader == "" {
-				c.AbortWithStatusJSON(http.StatusBadRequest, controllers.ErrorResponse{
-					Error: errors.New("missing authorization header").Error(),
-				})
-				return
-			}
+		if authHeader == "" {
+			c.AbortWithStatusJSON(http.StatusBadRequest, controllers.ErrorResponse{
+				Error: errors.New("missing authorization header").Error(),
+			})
+			return
+		}
 
-			tokenParts := strings.Split(authHeader, "Bearer ")
-			token := tokenParts[1]
+		tokenParts := strings.Split(authHeader, "Bearer ")
+		token := tokenParts[1]
 
-			jwtVerifierSetup := jwtverifier.JwtVerifier{
-				Issuer:           issuer,
-				ClaimsToValidate: claimsToValidate,
-			}
+		jwtVerifierSetup := jwtverifier.JwtVerifier{
+			Issuer:           issuer,
+			ClaimsToValidate: claimsToValidate,
+		}
 
-			if _, err := jwtVerifierSetup.New().VerifyAccessToken(token); err != nil {
-				log.Println(err)
-				c.AbortWithStatus(http.StatusUnauthorized)
-				return
-			}
+		if _, err := jwtVerifierSetup.New().VerifyAccessToken(token); err != nil {
+			log.Println(err)
+			c.AbortWithStatus(http.StatusUnauthorized)
+			return
 		}
 	}
 }

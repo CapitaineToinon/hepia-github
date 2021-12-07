@@ -1,15 +1,16 @@
 import { LoginCallback } from "@okta/okta-vue";
 import { createRouter, createWebHistory } from "vue-router";
 import Home from "./pages/index.vue";
-import Students from "./pages/Students.vue";
-import Teachers from "./pages/Teachers.vue";
+import Students from "./pages/students.vue";
+import Teachers from "./pages/teachers.vue";
+import Token from "./pages/token.vue";
 
 export const router = createRouter({
   history: createWebHistory(),
   routes: [
     {
       path: "/",
-      name: 'home',
+      name: "home",
       component: Home,
     },
     {
@@ -22,6 +23,13 @@ export const router = createRouter({
     {
       path: "/teachers",
       component: Teachers,
+      meta: {
+        requiresAuth: true,
+      },
+    },
+    {
+      path: "/token",
+      component: Token,
       meta: {
         requiresAuth: true,
       },

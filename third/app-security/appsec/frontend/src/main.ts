@@ -7,8 +7,8 @@ import OktaVue from "@okta/okta-vue";
 import { createPinia } from "pinia";
 
 const oktaAuth = new OktaAuth({
-  issuer: "https://dev-29413258.okta.com/oauth2/default",
-  clientId: "0oa2voyb6y84LPhx05d7",
+  issuer: import.meta.env.VITE_OKTA_ISSUER as string,
+  clientId: import.meta.env.VITE_OKTA_CLIENT_ID as string,
   redirectUri: window.location.origin + "/login/callback",
   scopes: ["openid", "profile", "email"],
 });

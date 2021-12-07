@@ -5,7 +5,9 @@ export function useApi() {
   const authStore = useAuthStore();
 
   return createFetch({
-    baseUrl: import.meta.env.DEV ? "http://localhost:3000/api" : "/api",
+    baseUrl: import.meta.env.DEV
+      ? `http://localhost:${import.meta.env.VITE_BACKEND}/api`
+      : "/api",
     options: {
       async beforeFetch({ options }) {
         const myToken = authStore.$auth.getAccessToken();

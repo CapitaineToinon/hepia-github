@@ -1,11 +1,15 @@
 <script setup lang="ts">
 import Navbar from "./components/Navbar.vue";
+import ToastContainer from "./components/ToastContainer.vue";
 </script>
 
 <template>
   <main class="main">
+    <ToastContainer />
     <Navbar />
-    <RouterView />
+    <div class="container max-w-screen-md mx-auto px-6">
+      <RouterView />
+    </div>
   </main>
 </template>
 
