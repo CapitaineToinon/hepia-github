@@ -16,20 +16,13 @@ func GetRouter() *gin.Engine {
 
 	r.Use(static.Serve("/", static.LocalFile("./frontend/dist", true)))
 
-	public := r.Group("/auth")
+	api := r.Group("/api")
+	api.Use(middlewares.AuthMiddleware())
 	{
-		public.GET("/login", controllers.LoginHandler)
-		public.GET("/logout", controllers.LogoutHandler)
-		public.GET("/callback", controllers.AuthCodeCallbackHandler)
-	}
-
-	authorized := r.Group("/")
-	authorized.Use(middlewares.AuthMiddleware())
-	{
-		authorized.GET("/students", controllers.GetStudentsHandler)
-		authorized.GET("/teachers", controllers.GetTeachersHandler)
-		authorized.POST("/students", controllers.PostStudentsHandler)
-		authorized.POST("/teachers", controllers.PostTeachersHandler)
+		api.GET("/students", controllers.GetStudentsHandler)
+		api.GET("/teachers", controllers.GetTeachersHandler)
+		api.POST("/students", controllers.PostStudentsHandler)
+		api.POST("/teachers", controllers.PostTeachersHandler)
 	}
 
 	r.NoRoute(func(c *gin.Context) {

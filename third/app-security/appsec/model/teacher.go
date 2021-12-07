@@ -6,9 +6,9 @@ import (
 
 type Teacher struct {
 	gorm.Model
-	Lastname string
-	Name     string
-	Class    string
+	Lastname string `json:"lastname"`
+	Name     string `json:"name"`
+	Class    string `json:"class"`
 }
 
 type TeacherRegister struct {
