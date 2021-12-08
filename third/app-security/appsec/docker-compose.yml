@@ -3,7 +3,7 @@ version: '3.9'
 services:
   go:
     build:
-      dockerfile: ./docker/go.Dockerfile
+      dockerfile: ./docker/go/Dockerfile
     environment:
       MYSQL_HOST: db
       MYSQL_PORT: ${MYSQL_PORT}
@@ -12,13 +12,14 @@ services:
       MYSQL_PASSWORD: ${MYSQL_PASSWORD}
     depends_on:
       db:
-        condition: service_healthy
+        condition: service_healthy # wait for db to have started before starting the go backend
 
   nginx:
-    image: nginx:latest
-    volumes:
-      - ./nginx.conf:/etc/nginx/nginx.conf
-      - ./certs:/certs
+    build:
+      dockerfile: ./docker/nginx/Dockerfile
+    environment:
+      - API_HOST=go
+      - API_PORT=${GO_PORT}
     depends_on:
       - go
     ports:
@@ -47,13 +48,12 @@ services:
         ]
       timeout: 1s
       retries: 10
-
+  
+  # mostly used for debug
   adminer:
     image: adminer
     ports:
       - ${ADMINER_PORT}:8080
-    depends_on:
-      - db
 
 volumes:
   mysql: null

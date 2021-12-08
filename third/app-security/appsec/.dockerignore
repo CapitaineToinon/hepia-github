@@ -1,0 +1,8 @@
+./vscode
+./frontend/dist
+docker-compose.yml
+example.env
+main
+Makefile
+nginx.conf
+README.md
