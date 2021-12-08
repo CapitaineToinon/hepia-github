@@ -5,3 +5,9 @@ export type Student = GormModel & {
   name: string;
   filiere: string;
 };
+
+export type StudentRegister = {
+  lastname: string;
+  name: string;
+  filiere: string;
+};

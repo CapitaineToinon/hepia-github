@@ -5,3 +5,9 @@ export type Teacher = GormModel & {
   name: string;
   class: string;
 };
+
+export type TeacherRegister = {
+  lastname: string;
+  name: string;
+  class: string;
+};

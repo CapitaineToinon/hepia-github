@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { StudentRegister } from "../../types";
+import type { TeacherRegister } from "../../types";
 import { ref } from "vue";
 import { useVModel, get, set } from "@vueuse/core";
 import { useApi } from "../../composable/useApi";
@@ -15,21 +15,21 @@ const api = useApi();
 const { success, error } = useToast();
 const open = useVModel(props, "visible");
 
-const initial: StudentRegister = {
+const initial: TeacherRegister = {
   lastname: "",
   name: "",
-  filiere: "",
+  class: "",
 };
 
-const student = ref<StudentRegister>({ ...initial });
+const teacher = ref<TeacherRegister>({ ...initial });
 
-const { post, isFetching } = api("/students", { immediate: false });
+const { post, isFetching } = api("/teachers", { immediate: false });
 
 async function confirm() {
   try {
-    await post(get(student)).execute(true);
-    success("Student created");
-    emit("create", get(student));
+    await post(get(teacher)).execute(true);
+    success("Teacher created");
+    emit("create", get(teacher));
     close();
   } catch (e) {
     error((e as Error).message);
@@ -38,7 +38,7 @@ async function confirm() {
 
 function close() {
   set(open, false);
-  set(student, { ...initial });
+  set(teacher, { ...initial });
 }
 </script>
 
@@ -47,14 +47,14 @@ function close() {
     <div class="modal-box">
       <form class="flex flex-col gap-3">
         <div class="prose">
-          <h2>Add a new student</h2>
+          <h2>Add a new teacher</h2>
         </div>
         <div class="form-control">
           <label class="label">
             <span class="label-text">Lastname</span>
           </label>
           <input
-            v-model="student.lastname"
+            v-model="teacher.lastname"
             type="text"
             placeholder="username"
             class="input input-bordered"
@@ -65,7 +65,7 @@ function close() {
             <span class="label-text">Name</span>
           </label>
           <input
-            v-model="student.name"
+            v-model="teacher.name"
             type="text"
             placeholder="username"
             class="input input-bordered"
@@ -73,10 +73,10 @@ function close() {
         </div>
         <div class="form-control">
           <label class="label">
-            <span class="label-text">Branch</span>
+            <span class="label-text">Class</span>
           </label>
           <input
-            v-model="student.filiere"
+            v-model="teacher.class"
             type="text"
             placeholder="username"
             class="input input-bordered"

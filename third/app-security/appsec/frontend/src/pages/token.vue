@@ -8,7 +8,7 @@ const toast = useToast();
 
 const authStore = useAuthStore();
 const source = ref(authStore.$auth.getAccessToken() as string);
-const { copy, copied, isSupported } = useClipboard({ source });
+const { copy, isSupported } = useClipboard({ source });
 
 async function onClick() {
   await copy();
@@ -23,7 +23,7 @@ async function onClick() {
       Here is your JWT token if you wish to use the API through another mean,
       such as
       <a
-        class="link link-primary link-hover"
+        class="link link-primary"
         target="__blank"
         href="https://insomnia.rest/"
         >insomnia</a

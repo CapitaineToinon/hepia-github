@@ -7,7 +7,7 @@ import ToastContainer from "./components/ToastContainer.vue";
   <main class="main">
     <ToastContainer />
     <Navbar />
-    <div class="container max-w-screen-md mx-auto px-6">
+    <div class="container max-w-screen-md mx-auto px-2 sm:px-3">
       <RouterView />
     </div>
   </main>
