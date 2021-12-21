@@ -8,6 +8,9 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+var postUser = "test@gmail.com"
+var deleteUser = "johndoe@gmail.com"
+
 func GetRouter() *gin.Engine {
 	r := gin.New()
 	r.Use(gin.Logger())
@@ -17,12 +20,15 @@ func GetRouter() *gin.Engine {
 	r.Use(static.Serve("/", static.LocalFile("./frontend/dist", true)))
 
 	api := r.Group("/api")
+	api.GET("/students", controllers.GetStudentsHandler)
+	api.GET("/teachers", controllers.GetTeachersHandler)
+
 	api.Use(middlewares.AuthMiddleware())
 	{
-		api.GET("/students", controllers.GetStudentsHandler)
-		api.GET("/teachers", controllers.GetTeachersHandler)
-		api.POST("/students", controllers.PostStudentsHandler)
-		api.POST("/teachers", controllers.PostTeachersHandler)
+		api.POST("/students", middlewares.EmailMiddleware(postUser), controllers.PostStudentsHandler)
+		api.POST("/teachers", middlewares.EmailMiddleware(postUser), controllers.PostTeachersHandler)
+		api.DELETE("/students", middlewares.EmailMiddleware(deleteUser), controllers.DeleteStudent)
+		api.DELETE("/teachers", middlewares.EmailMiddleware(deleteUser), controllers.DeleteTeacher)
 	}
 
 	r.NoRoute(func(c *gin.Context) {

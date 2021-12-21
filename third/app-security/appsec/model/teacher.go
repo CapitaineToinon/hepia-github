@@ -16,3 +16,7 @@ type TeacherRegister struct {
 	Name     string `json:"name" binding:"required"`
 	Class    string `json:"class" binding:"required"`
 }
+
+type TeacherDelete struct {
+	ID string `json:"id" binding:"required"`
+}

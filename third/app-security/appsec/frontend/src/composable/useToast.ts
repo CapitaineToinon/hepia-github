@@ -58,5 +58,3 @@ export function useToastMap() {
     Array.from(state.map.values()).map((toast) => get(toast))
   );
 }
-
-watchEffect(() => console.log(state));

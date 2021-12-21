@@ -20,8 +20,6 @@ services:
     environment:
       - API_HOST=go
       - API_PORT=${GO_PORT}
-    depends_on:
-      - go
     ports:
       - 80:80
       - 443:443

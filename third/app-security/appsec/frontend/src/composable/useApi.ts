@@ -12,20 +12,12 @@ export function useApi() {
       async beforeFetch({ options }) {
         const myToken = authStore.$auth.getAccessToken();
 
-        if (!myToken) {
-          try {
-            await authStore.$auth.signInWithRedirect({
-              originalUri: window.location.href,
-            });
-          } catch (e) {
-            console.error(e);
-          }
+        if (myToken) {
+          options.headers = {
+            ...(options.headers ?? {}),
+            Authorization: `Bearer ${myToken}`,
+          };
         }
-
-        options.headers = {
-          ...(options.headers ?? {}),
-          Authorization: `Bearer ${myToken}`,
-        };
 
         return { options };
       },

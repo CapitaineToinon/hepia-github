@@ -2,3 +2,7 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+.link-primary {
+  @apply decoration-primary decoration-2;
+}

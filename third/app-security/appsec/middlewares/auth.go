@@ -4,6 +4,7 @@ import (
 	"appSec/myApp/controllers"
 	"appSec/myApp/env"
 	"errors"
+	"fmt"
 	"log"
 	"net/http"
 	"strings"
@@ -40,9 +41,30 @@ func AuthMiddleware() gin.HandlerFunc {
 			ClaimsToValidate: claimsToValidate,
 		}
 
-		if _, err := jwtVerifierSetup.New().VerifyAccessToken(token); err != nil {
+		decoded, err := jwtVerifierSetup.New().VerifyAccessToken(token)
+
+		if err != nil {
 			log.Println(err)
-			c.AbortWithStatus(http.StatusUnauthorized)
+			c.AbortWithStatusJSON(http.StatusUnauthorized, controllers.ErrorResponse{
+				Error: errors.New("unauthorized").Error(),
+			})
+			return
+		}
+
+		c.Set("Jwt", decoded)
+	}
+}
+
+func EmailMiddleware(email string) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		token := c.MustGet("Jwt").(*jwtverifier.Jwt)
+
+		if token.Claims["sub"] != email {
+			message := fmt.Errorf("unauthorized, you are not %s", email).Error()
+			log.Println(message)
+			c.AbortWithStatusJSON(http.StatusUnauthorized, controllers.ErrorResponse{
+				Error: message,
+			})
 			return
 		}
 	}

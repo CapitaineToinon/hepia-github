@@ -51,10 +51,7 @@ useEventListener("resize", useThrottleFn(closeMenu, 100));
 </script>
 
 <template>
-  <div
-    class="navbar mb-3 shadow-lg bg-base-100 text-base-content"
-    :class="{ 'is-fixed': $route.name === 'home' }"
-  >
+  <div class="navbar mb-3 shadow-lg bg-base-100 text-base-content">
     <div class="px-2 mx-2 navbar-start">
       <RouterLink to="/" class="btn btn-square btn-ghost">
         <HomeIcon class="h-6 w-6" />
@@ -98,10 +95,6 @@ useEventListener("resize", useThrottleFn(closeMenu, 100));
 .navbar {
   @apply relative z-40;
 
-  &.is-fixed {
-    @apply fixed top-0 left-0 right-0;
-  }
-
   & .mobile-menu {
     @apply absolute right-0 left-0 top-full;
     @apply bg-base-100 shadow-lg m-0 py-3 justify-center;
@@ -110,6 +103,6 @@ useEventListener("resize", useThrottleFn(closeMenu, 100));
 }
 
 .router-link-active {
-  @apply text-primary;
+  @apply text-accent;
 }
 </style>

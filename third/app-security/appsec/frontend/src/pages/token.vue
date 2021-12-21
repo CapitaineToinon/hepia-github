@@ -19,6 +19,9 @@ async function onClick() {
 <template>
   <div class="prose mb-6">
     <h1>Token</h1>
+    <template v-if="authState.isAuthenticated">
+
+    </template>
     <p>
       Here is your JWT token if you wish to use the API through another mean,
       such as
