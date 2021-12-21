@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 
 from random import choice, randint
+from typing import List
 
 
 def gcd(a: int, b: int):
@@ -10,13 +11,6 @@ def gcd(a: int, b: int):
     while b != 0:
         a, b = b, a % b
     return a
-
-
-def modexp(base, exp, modulus):
-    """
-    function that does a modular exponentiation
-    """
-    return pow(base, exp, modulus)
 
 
 def generate_primes(n: int) -> List[int]:
@@ -44,31 +38,27 @@ def random_prime(digits: int) -> int:
     return choice([p for p in generate_primes(upper) if p > lower])
 
 
-def generate_g(prime):
+def generate_g(prime: int):
     """
     Generates g according to a prime
     """
-    candidates = []
+    guesses = []
 
     while True:
         # try random guesses until we find one
         values = [False] * prime
         g = randint(2, prime - 1)
 
-        if g in candidates:
+        if g in guesses:
             continue
 
-        candidates.append(g)
+        guesses.append(g)
 
         for i in range(0, prime):
             j = pow(g, i, prime)
-
-            if values[j] == True:
-                break
-
             values[j] = True
 
-        # if all values are True then g is generator
+        # if all values (ingoring 0) are True then g is generator
         if len([v for v in values[1:] if v == False]) == 0:
             return g
 
@@ -79,8 +69,8 @@ def generate_keys():
     """
     p = random_prime(digits=3)
     g = generate_g(prime=p)
-    a = randint(1, p - 1)
-    A = modexp(g, a, p)
+    a = randint(1, p - 2)
+    A = pow(g, a, p)
     return (p, g, A), a
 
 
@@ -89,7 +79,7 @@ def generate_k(prime):
     Generate a random 0 < k < p-1 that is coprime to p-1
     """
     while True:
-        k = randint(1, prime - 1)
+        k = randint(1, prime - 2)
         if gcd(k, prime - 1) == 1:
             return k
 
@@ -105,12 +95,20 @@ def bezout_indentity(a, b):
         return d, y, x - (a // b) * y
 
 
+def bezout_b(a, b):
+    """
+    Return only the b coeficient of bezout
+    """
+    _, _b, _ = bezout_indentity(a, b)
+    return _b
+
+
 def sign(m, public_key, private_key):
     a = private_key
     (p, g, A) = public_key
     k = generate_k(prime=p)
 
-    Y = modexp(g, k, p)
+    Y = pow(g, k, p)
 
     gcd, x, y = bezout_indentity(k, p - 1)
     S = (m - a * Y) * x
@@ -120,12 +118,49 @@ def sign(m, public_key, private_key):
 
 
 if __name__ == "__main__":
-    (p, g, A), private_key = generate_keys()
-    Y, S = sign(89, (p, g, A), private_key)
 
-    print(f"(p, g, A)={(p, g, A)}, a={private_key}")
-    print(f"(Y, S)={(Y, S)}")
-    # print(verify(15, public_key, Y, S))
+    message = "Bonjour"
 
-    print(gcd(20, 10))
-    print(bezout_indentity(20, 10))
+    # public_key, private_key = generate_keys()
+
+    p = random_prime(digits=2)
+    # p = 13
+    g = generate_g(p)
+    # g = 7
+    a = randint(1, p - 2)
+    # a = 9
+
+    A = pow(g, a, p)
+    key = (p, g, A)
+
+    k = generate_k(p)
+    # k = 5
+
+    Y = pow(g, k, p)
+    b = bezout_b(k, p - 1)
+    print(a, Y, b)
+
+    def sign_char(char) -> int:
+        return ((ord(char) - (a * Y)) * b) % (p - 1)
+
+    def verify_char(m, S) -> bool:
+        left = (pow(A, Y) * pow(Y, S)) % p
+        right = pow(g, ord(m), p)
+        return left == right
+
+    def sign(message) -> List[int]:
+        return [sign_char(char) for char in message]
+
+    def verify(message, signed) -> bool:
+        for i in range(0, len(signed)):
+            if verify_char(message[i], signed[i]) == False:
+                return False
+        return True
+    
+    # signed = sign_char("B")
+    # print("B", signed)
+    # print(verify_char("B", signed))
+
+    signed = sign(message)
+    print(message, signed)
+    print(verify(message, signed))
