@@ -1,6 +1,5 @@
 module.exports = {
   content: ["./index.html", "./src/**/*.{vue,js,ts,jsx,tsx}"],
-  darkMode: false, // using daisy for theme switching
   theme: {
     fontFamily: {
       sans: "Quicksand, Helvetica, Arial, sans-serif",

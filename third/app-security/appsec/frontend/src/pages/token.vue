@@ -1,12 +1,14 @@
 <script setup lang="ts">
 import { ref } from "vue";
-import { useAuthStore } from "../stores/auth";
+import { useAuthStateStore, useAuthStore } from "../stores/auth";
 import { useClipboard } from "@vueuse/core";
 import { useToast } from "../composable/useToast";
 
 const toast = useToast();
 
+const authState = useAuthStateStore();
 const authStore = useAuthStore();
+
 const source = ref(authStore.$auth.getAccessToken() as string);
 const { copy, isSupported } = useClipboard({ source });
 
@@ -19,9 +21,7 @@ async function onClick() {
 <template>
   <div class="prose mb-6">
     <h1>Token</h1>
-    <template v-if="authState.isAuthenticated">
-
-    </template>
+    <template v-if="authState.authState.isAuthenticated"> </template>
     <p>
       Here is your JWT token if you wish to use the API through another mean,
       such as
@@ -56,7 +56,7 @@ async function onClick() {
   </div>
   <div class="card bg-base-100 shadow-lg">
     <div class="card-body">
-      <pre class="overflow-x-auto">{{ authStore.$auth.getAccessToken() }}</pre>
+      <pre class="overflow-x-auto">{{ source }}</pre>
     </div>
   </div>
 </template>

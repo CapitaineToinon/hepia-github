@@ -58,7 +58,7 @@ watchEffect(() => console.log({ ...unref(stateStore.authState.accessToken) }));
             to delete students or teachers
           </li>
           <li>
-            <span class="underline decoration-primary">user@gmail.com</span> to
+            <span class="underline decoration-primary">test@gmail.com</span> to
             create students or teachers
           </li>
         </ul>
@@ -70,7 +70,7 @@ watchEffect(() => console.log({ ...unref(stateStore.authState.accessToken) }));
           You can now browse the website or you can get your JWT Token to
           comsume the api without using the website.
         </p>
-        <RouterLink to="/token" class="btn btn-primary"
+        <RouterLink to="/token" class="btn btn-primary !text-primary-content"
           >Get my JWT Token</RouterLink
         >
       </div>

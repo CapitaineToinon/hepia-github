@@ -11,9 +11,10 @@ import {
   InformationCircleIcon,
 } from "@heroicons/vue/solid";
 import { useToast } from "../composable/useToast";
-import { useAuthStore } from "../stores/auth";
+import { useAuthStateStore, useAuthStore } from "../stores/auth";
 
-const authState = useAuthStore();
+const authState = useAuthStateStore();
+const authStore = useAuthStore();
 
 const api = useApi();
 const toast = useToast();
@@ -49,7 +50,7 @@ function errorHandler(error: any) {
 </script>
 
 <template>
-  <div v-if="authState.isAuthenticated" class="flex justify-end">
+  <div v-if="authState.authState.isAuthenticated" class="flex justify-end">
     <button @click="() => toggle()" class="btn btn-primary flex gap-3">
       <UserAddIcon class="h-6 w-6" />Add Teacher
     </button>
@@ -60,7 +61,7 @@ function errorHandler(error: any) {
       <InformationCircleIcon class="h-6 w-6 mr-3" />
       <label
         >You need to
-        <a class="link" @click="() => authState.$auth.signInWithRedirect()"
+        <a class="link" @click="() => authStore.$auth.signInWithRedirect()"
           >sign-in</a
         >
         to create or delete teachers.</label
@@ -96,7 +97,7 @@ function errorHandler(error: any) {
               </td>
               <td>
                 <button
-                  v-if="authState.isAuthenticated"
+                  v-if="authState.authState.isAuthenticated"
                   @click="() => tryDelete(teacher.ID)"
                   class="float-right"
                 >

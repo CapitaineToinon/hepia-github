@@ -12,6 +12,7 @@ export default defineConfig({
   resolve: {
     alias: [
       {
+        // meme workaround because okta sucks major d's
         find: "@okta/okta-auth-js",
         replacement: require.resolve(
           "@okta/okta-auth-js/dist/okta-auth-js.umd.js"
