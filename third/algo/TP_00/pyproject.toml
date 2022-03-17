@@ -1,0 +1,16 @@
+[tool.poetry]
+name = "tp_00"
+version = "0.1.0"
+description = ""
+authors = ["CapitaineToinon <antoinesutter@gmail.com>"]
+
+[tool.poetry.dependencies]
+python = "^3.9"
+numpy = "^1.22.2"
+
+[tool.poetry.dev-dependencies]
+autopep8 = "^1.6.0"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
