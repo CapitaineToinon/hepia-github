@@ -1,9 +1,8 @@
+import type { Argv } from 'yargs'
 import * as process from 'process'
 import yargs from 'yargs/yargs'
 import { hideBin } from 'yargs/helpers'
-import { Scanners } from './scanners/index'
-import Factory from './factory'
-import { Argv } from 'yargs'
+import { Algorithms, createScanner } from './scanners/index'
 import { content } from './file'
 
 class Main {
@@ -96,7 +95,7 @@ class Main {
         })
     },
     async ({ algo, pattern, filename, verbose }) => {
-      const scanner = Factory.create(algo as Scanners, pattern, verbose)
+      const scanner = createScanner(algo as Algorithms, pattern, verbose)
 
       if (filename) {
         const source = await content(filename)

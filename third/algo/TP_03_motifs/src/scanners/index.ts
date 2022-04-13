@@ -1,7 +1,5 @@
-export { RabinKarp } from './rabinkarp'
-export { KnuthMorrisPratt } from './knuthmorrispratt'
-
-export enum Scanners {
-  RabinKarp = 1,
-  KnuthMorrisPratt = 3,
-}
+export * from './algorithms'
+export * from './factory'
+export * from './knuthmorrispratt'
+export * from './rabinkarp'
+export * from './scanner'
