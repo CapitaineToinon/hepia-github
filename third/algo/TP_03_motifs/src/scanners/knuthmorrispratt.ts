@@ -4,10 +4,6 @@ export class KnuthMorrisPratt extends Scanner {
   name: string = 'Knuth-Morris-Pratt'
 
   #buildTable(): number[] {
-    if (!this.source) {
-      throw new Error('source is undefined')
-    }
-
     const table: number[] = [0]
 
     let prefix = 0

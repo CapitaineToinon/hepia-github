@@ -1,9 +1,7 @@
 import { Scanner } from './scanner'
 
-type State = number
-
 type CharacterStateMap = {
-  [key: string]: State
+  [key: string]: number
 }
 
 export class Automates extends Scanner {
@@ -15,11 +13,14 @@ export class Automates extends Scanner {
 
     const positions: number[] = []
 
+    // naviguate the state machine...
     let state = 0
     for (let i = 0; i < this.source.length; i++) {
-      // fallback to state 0 if we go out of bounds
-      // aka if the character at i isn't part of the pattern at all
+      // fallback to state 0 if the character at this.source[i] isn't
+      // part of the pattern and thus isn't part of the state machine table.
+      // defaults back to state 0 if character not found.
       state = this.#table[state][this.source[i]] ?? 0
+
       if (state === this.pattern.length) {
         const position = i - this.pattern.length + 1
         this.logPattern(position)
@@ -73,6 +74,10 @@ export class Automates extends Scanner {
     // very important to loop on state <= pattern.length
     // to create a final step that allows looping back
     // on potentially overlapping patterns!
+    //
+    // we're also only creating entries for unique chars
+    // in the pattern. foreign characters needs to be handled
+    // by the search function instead.
     for (let state = 0; state <= pattern.length; ++state) {
       this.#table[state] = uniqChars.reduce(
         (previous, key) => ({

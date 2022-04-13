@@ -3,7 +3,6 @@ export interface IScanner {
   setSource(source: string): this
   getResult(): number[]
   scan(): this
-  printResult(): this
   printInfo(): this
 }
 
@@ -69,17 +68,6 @@ export abstract class Scanner implements IScanner {
     }
 
     this.log({ pattern: this.pattern, source: this.source })
-  }
-
-  printResult(): this {
-    console.log({
-      algorithm: this.name,
-      pattern: this.pattern,
-      occurances: this.result.length,
-      positions: this.getResult(),
-    })
-
-    return this
   }
 
   abstract scan(): this
