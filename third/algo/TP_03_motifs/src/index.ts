@@ -2,7 +2,7 @@ import type { Argv } from 'yargs'
 import * as process from 'process'
 import yargs from 'yargs/yargs'
 import { hideBin } from 'yargs/helpers'
-import { Algorithms, createScanner } from './scanners/index'
+import { createScanner } from './scanners/index'
 import { content } from './file'
 
 class Main {
@@ -93,13 +93,29 @@ class Main {
           description: 'Run with verbose logging',
           default: false,
         })
+        .option('zero', {
+          alias: 'z',
+          type: 'boolean',
+          description: 'return the result as zero indexed',
+          default: false,
+        })
     },
-    async ({ algo, pattern, filename, verbose }) => {
-      const scanner = createScanner(algo as Algorithms, pattern, verbose)
+    async ({ algo, pattern, filename, verbose, zero }) => {
+      const scanner = createScanner(algo, { verbose, zeroIndexed: zero }).setPattern(pattern)
 
       if (filename) {
         const source = await content(filename)
-        scanner.setSource(source).scan().printResult()
+        const result = scanner.setSource(source).scan().getResult()
+
+        if (verbose) {
+          console.log({
+            pattern: pattern,
+            occurances: result.length,
+            positions: result,
+          })
+        } else {
+          console.log(result)
+        }
       } else {
         scanner.printInfo()
       }
