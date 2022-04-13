@@ -76,15 +76,15 @@ class Main {
     (yargs) => {
       return yargs
         .positional('pattern', {
-          describe: 'the pattern',
+          describe: 'The pattern to be searched',
           type: 'string',
         })
         .positional('algo', {
-          describe: 'the algo',
+          describe: 'The algorythim to use',
           type: 'number',
         })
         .positional('filename', {
-          describe: 'the filename',
+          describe: 'Filename to search the pattern in',
           type: 'string',
         })
         .option('verbose', {
@@ -96,12 +96,15 @@ class Main {
         .option('zero', {
           alias: 'z',
           type: 'boolean',
-          description: 'return the result as zero indexed',
+          description: 'Return the result as zero indexed',
           default: false,
         })
     },
     async ({ algo, pattern, filename, verbose, zero }) => {
-      const scanner = createScanner(algo, { verbose, zeroIndexed: zero }).setPattern(pattern)
+      const scanner = createScanner(algo, {
+        verbose,
+        zeroIndexed: zero,
+      }).setPattern(pattern)
 
       if (filename) {
         const source = await content(filename)
@@ -113,9 +116,9 @@ class Main {
             occurances: result.length,
             positions: result,
           })
-        } else {
-          console.log(result)
         }
+
+        console.log(result.join(','))
       } else {
         scanner.printInfo()
       }

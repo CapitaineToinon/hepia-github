@@ -21,9 +21,7 @@ export class BoyerMoore extends Scanner {
   }
 
   scan(): this {
-    if (!this.source) {
-      throw new Error('source is undefined')
-    }
+    this.checkBeforeScan()
 
     const badchar = new Array(this.#setSize)
     const positions: number[] = []
@@ -50,7 +48,7 @@ export class BoyerMoore extends Scanner {
          shift, then index j will become -1 after
          the above loop */
       if (j < 0) {
-        this.log(`Found pattern '${this.pattern}' at position ${s}`)
+        this.logPattern(s)
         positions.push(s)
 
         /* Shift the pattern so that the next
@@ -62,7 +60,8 @@ export class BoyerMoore extends Scanner {
         // txt[s+m] is character after the pattern in text
         s +=
           s + this.pattern.length < this.source.length
-            ? this.pattern.length - badchar[ord(this.source[s + this.pattern.length])]
+            ? this.pattern.length -
+              badchar[ord(this.source[s + this.pattern.length])]
             : 1
       } else
       /* Shift the pattern so that the bad character

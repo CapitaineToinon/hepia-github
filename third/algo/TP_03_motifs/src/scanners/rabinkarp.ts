@@ -7,11 +7,7 @@ export class RabinKarp extends Scanner {
   #setSize: number = 256 // amount of different possible characters in ascii
 
   scan() {
-    if (!this.source) {
-      throw new Error('source is undefined')
-    }
-
-    this.log({ pattern: this.pattern, source: this.source })
+    this.checkBeforeScan()
 
     // to match names in literature
     let d = this.#setSize
@@ -47,7 +43,7 @@ export class RabinKarp extends Scanner {
         }
 
         if (j == this.pattern.length) {
-          this.log(`'Pattern found at index ${i}`)
+          this.logPattern(i)
           positions.push(i)
         }
       }
@@ -56,7 +52,9 @@ export class RabinKarp extends Scanner {
       // leading digit, add trailing digit
       if (i < this.source.length - this.pattern.length) {
         sHash =
-          (d * (sHash - ord(this.source[i]) * h) + ord(this.source[i + this.pattern.length])) % p
+          (d * (sHash - ord(this.source[i]) * h) +
+            ord(this.source[i + this.pattern.length])) %
+          p
 
         // ensure sHash is positive
         if (sHash < 0) {

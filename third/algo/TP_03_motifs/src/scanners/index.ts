@@ -1,4 +1,5 @@
 export * from './algorithms'
+export * from './automates'
 export * from './boyermoore'
 export * from './factory'
 export * from './knuthmorrispratt'

@@ -30,11 +30,7 @@ export class KnuthMorrisPratt extends Scanner {
   }
 
   scan(): this {
-    if (!this.source) {
-      throw new Error('source is undefined')
-    }
-
-    this.log({ pattern: this.pattern, source: this.source })
+    this.checkBeforeScan()
 
     let sourceIdx = 0
     let patternIdx = 0
@@ -46,7 +42,7 @@ export class KnuthMorrisPratt extends Scanner {
       if (this.source[sourceIdx] === this.pattern[patternIdx]) {
         if (patternIdx === this.pattern.length - 1) {
           const position = sourceIdx - this.pattern.length + 1
-          this.log(`Found pattern '${this.pattern}' at position ${position}`)
+          this.logPattern(position)
           positions.push(position)
         }
 
