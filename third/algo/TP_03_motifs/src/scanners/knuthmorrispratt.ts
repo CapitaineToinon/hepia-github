@@ -1,7 +1,7 @@
 import { Scanner } from './scanner'
 
 export class KnuthMorrisPratt extends Scanner {
-  name: string = 'Knuth-Morris-Pratt'
+  name = 'Knuth-Morris-Pratt'
 
   #buildTable(): number[] {
     const table: number[] = [0]

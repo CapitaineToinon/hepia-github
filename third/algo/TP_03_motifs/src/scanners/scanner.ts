@@ -12,7 +12,7 @@ export interface ScannerOptions {
 }
 
 export abstract class Scanner implements IScanner {
-  name: string = 'Unknown Scanner'
+  name = 'Unknown Scanner'
   pattern: string
   source?: string
   result: number[]
@@ -49,7 +49,7 @@ export abstract class Scanner implements IScanner {
     return positions
   }
 
-  log(...args: any[]): void {
+  log(...args: unknown[]): void {
     if (!this.verbose) return
     console.log(...args)
   }

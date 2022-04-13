@@ -5,7 +5,7 @@ type CharacterStateMap = {
 }
 
 export class Automates extends Scanner {
-  name: string = 'Automates'
+  name = 'Automates'
   #table: CharacterStateMap[]
 
   scan(): this {

@@ -2,8 +2,8 @@ import { Scanner } from './scanner'
 import { max, ord } from '../python/index'
 
 export class BoyerMoore extends Scanner {
-  name: string = 'Boyer-Moore'
-  #setSize: number = 256 // amount of different possible characters in ascii
+  name = 'Boyer-Moore'
+  #setSize = 256 // amount of different possible characters in ascii
 
   // The preprocessing function for Boyer Moore's
   // bad character heuristic

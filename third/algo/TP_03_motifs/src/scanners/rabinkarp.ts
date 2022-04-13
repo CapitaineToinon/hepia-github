@@ -2,20 +2,20 @@ import { Scanner } from './scanner'
 import { ord } from '../python/index'
 
 export class RabinKarp extends Scanner {
-  name: string = 'Rabin-Karp'
-  #prime: number = 337 // https://xkcd.com/221/
-  #setSize: number = 256 // amount of different possible characters in ascii
+  name = 'Rabin-Karp'
+  #prime = 337 // https://xkcd.com/221/
+  #setSize = 256 // amount of different possible characters in ascii
 
   scan() {
     this.checkBeforeScan()
 
     // to match names in literature
-    let d = this.#setSize
-    let p = this.#prime
+    const d = this.#setSize
+    const p = this.#prime
 
-    let pHash: number = 0 // pattern hash
-    let sHash: number = 0 // source hash
-    let h: number = 1
+    let pHash = 0 // pattern hash
+    let sHash = 0 // source hash
+    let h = 1
 
     // result array!
     const positions: number[] = []
