@@ -59,20 +59,16 @@ export class Automates extends Scanner {
   }
 
   #getNextState(state: number, key: string) {
-    // If current character is same as next character
-    // in the pattern then just increment the state
+    // if the current and the next characters are the same
+    // then the state can just be incremented
     if (state < this.pattern.length && key === this.pattern[state]) {
       return state + 1
     }
 
     let nextState: number
 
-    // next state finally contains the longest prefix
-    // which is also suffix in "pat[0..state-1]c"
-
-    // Start from the largest possible value
-    // and stop when you find a prefix which
-    // is also suffix
+    // browse the state until we find a pattern a prefix
+    // that is also a suffix
     for (nextState = state; nextState > 0; nextState--) {
       if (key === this.pattern[nextState - 1]) {
         let i: number // we need it after the loop
