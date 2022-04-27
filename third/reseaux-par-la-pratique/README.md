@@ -1,3 +1,103 @@
+# Sécurité
+
+Par Antoine Sutter
+
+# El Gamal
+
+Ce travail pratique a pour but de signer et vérifer des signature sur des document à l'aide de l’algorithme de [El Gamal](https://fr.wikipedia.org/wiki/Cryptosyst%C3%A8me_de_ElGamal). Le langage de programation Python 3 a été choisit car celui-ci est facile d'utilisation surtout dans le domaine des mathématiques.
+
+## 0 - Utilisation
+
+```
+$ python3 main.py
+usage: main.py [-h] [-g--generate] [-s keys file] [-v keys source output]
+
+El Gamal
+
+optional arguments:
+  -h, --help            show this help message and exit
+  -g--generate          generate keys
+  -s keys file, --sign keys file
+                        sign a given file and given keys
+  -v keys source output, --verify keys source output
+                        verify the signature for a given file
+```
+
+## 1 - Generation des clés
+
+La première étape de générer une clé publique et privée à l'aide de l'option `-g`:
+
+```
+$ python3 main.py -g
+created keys
+$ cat id_gamal.keys
+313
+244
+247
+158
+257
+77
+17
+```
+
+Afin de générer les clés, il faut générer les valeurs suivante:
+
+- un nombre premier `p` (dans notre cas, un nombre premier à 3 chiffre généré à l'aide du crible d'eratosthène);
+- un entier `a` tel que `0 <= a < p-1` qui sera généré aléatoirement;
+- un entier `g` appelé générateur. Sa particularité est qu'il est capable de générer tout les nombres entre 1 et `p` à l'aide de la formule `g ** n % p for n from 0 to p`;
+- `A` qui est généré à l'aide de la formule `A ≡ g ** a % p`.
+- `k` tel que `0 < k < p-2` et que `k` soit co-prime avec `p`. Nous utilisons une formule pour trouver le plus grand dénominateur commun (pgcd). Cette valeur est générée aléatoirement tant que le pgcd de `k` et `p` est `1`.
+- `Y` qui est généré à l'aide de la formule `g ** k % p`
+- `b` qui correspond au coefficient b du [Théorème de Bachet-Bézout](https://fr.wikipedia.org/wiki/Th%C3%A9or%C3%A8me_de_Bachet-B%C3%A9zout)
+
+Une fois toutes les valeurs générées, la publique est `(p, g, A)` et la clé privée est `a`. Les valeurs `k`, `Y` et `b` sont utilisés dans les étapes suivantes.
+
+Actuellement pour des soucis de simplification, toutes les valeurs cités ci dessus sont sauvés dans un unique fichier. Idéalement, il faudrait séparer la clé publique de la clé privée, comme le fait ssh par exemple:
+
+```
+$ ls -alp ~/.ssh/
+...
+-rw-------+  1 antoine  wheel  3434 Dec 11  2019 id_rsa
+-rw-------+  1 antoine  wheel   749 Dec 11  2019 id_rsa.pub
+...
+```
+
+## 2 - Signature d'un message
+
+Ensuite, il est possible de signer un message à l'aide de l'option `-s`:
+
+```
+$ echo "Bonjour" > message.txt
+$ python3 main.py -s id_gamal.keys message.txt
+$ cat output
+220
+49
+32
+276
+49
+151
+100
+204
+```
+
+Le ficher `output` contient la signature qui peut ensuite être utilisée pour valider le message.
+
+Afin de pouvoir signer un message, celui-ci est signé caractère par caractère à l'aide de la formule `(char - (a * Y)) * b) % (p - 1)`.
+
+## 3 - Validation d'une signature
+
+Finalement, il est possible de valider la signature d'un message à l'aide de l'option `-v`:
+
+```
+$ python3 main.py -v id_gamal.keys message.txt output
+The signature matched
+```
+
+La vérification est effectuée à l'aide de la formule `(A ** Y) * (Y ** S)) % p == g ** char % p` ou `S` est le caractère signé et `char` est le caractère original. Si ces deux expression ont la même valeur et ce pour chaque caractères alors a signature est valide.
+
+## 4 - Code source
+
+```python
 #!/usr/bin/python3
 
 from random import choice, randint
@@ -16,7 +116,7 @@ def gcd(a: int, b: int) -> int:
 
 def generate_primes(n: int) -> List[int]:
     """
-    Generate all the primes from 2 to n using the eratosthenes algorithm
+    Generate all the primes from 2 to n using the eratosthene algorythm
     """
     p = 2
     numbers = [i for i in range(n + 1)]
@@ -59,7 +159,7 @@ def generate_g(prime: int) -> int:
             j = pow(g, i, prime)
             values[j] = True
 
-        # if all values (ignoring 0) are True then g is generator
+        # if all values (ingoring 0) are True then g is generator
         if len([v for v in values[1:] if v == False]) == 0:
             return g
 
@@ -87,7 +187,7 @@ def bezout_indentity(a, b):
 
 def bezout_b(a, b) -> int:
     """
-    Return only the b coefficient of bezout
+    Return only the b coeficient of bezout
     """
     _, _b, _ = bezout_indentity(a, b)
     return _b
@@ -217,3 +317,9 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+```
+
+## Firewall
+
+

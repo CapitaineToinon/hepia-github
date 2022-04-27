@@ -1,0 +1,104 @@
+🚛 📦 Updating the path s -> v1 -> v4 -> t
+We find we can add a flow of 10 through this path
+The updated path therefore looks like this now:
+s -> 10/45 (+10) -> v1
+v1 -> 10/10 (+10) -> v4
+v4 -> 10/30 (+10) -> t
+And residual for this path is now:
+s <- 10 <- v1
+s -> 35 -> v1
+v1 <- 10 <- v4
+v1 -> 0 -> v4
+v4 <- 10 <- t
+v4 -> 20 -> t
+🚛 📦 Updating the path s -> v1 -> v5 -> t
+We find we can add a flow of 10 through this path
+The updated path therefore looks like this now:
+s -> 20/45 (+10) -> v1
+v1 -> 10/15 (+10) -> v5
+v5 -> 10/10 (+10) -> t
+And residual for this path is now:
+s <- 20 <- v1
+s -> 25 -> v1
+v1 <- 10 <- v5
+v1 -> 5 -> v5
+v5 <- 10 <- t
+v5 -> 0 -> t
+🚛 📦 Updating the path s -> v1 -> v7 -> t
+We find we can add a flow of 20 through this path
+The updated path therefore looks like this now:
+s -> 40/45 (+20) -> v1
+v1 -> 20/20 (+20) -> v7
+v7 -> 20/30 (+20) -> t
+And residual for this path is now:
+s <- 40 <- v1
+s -> 5 -> v1
+v1 <- 20 <- v7
+v1 -> 0 -> v7
+v7 <- 20 <- t
+v7 -> 10 -> t
+🚛 📦 Updating the path s -> v2 -> v4 -> t
+We find we can add a flow of 20 through this path
+The updated path therefore looks like this now:
+s -> 20/25 (+20) -> v2
+v2 -> 20/20 (+20) -> v4
+v4 -> 30/30 (+20) -> t
+And residual for this path is now:
+s <- 20 <- v2
+s -> 5 -> v2
+v2 <- 20 <- v4
+v2 -> 0 -> v4
+v4 <- 30 <- t
+v4 -> 0 -> t
+🚛 📦 Updating the path s -> v2 -> v5 -> t
+This path is already full to its max capacity
+s -> 20/25 (+0) -> v2
+v2 -> 0/5 (+0) -> v5
+v5 -> 10/10 (+0) -> t
+And residual for this path is now:
+s <- 20 <- v2
+s -> 5 -> v2
+v2 <- 0 <- v5
+v2 -> 5 -> v5
+v5 <- 10 <- t
+v5 -> 0 -> t
+🚛 📦 Updating the path s -> v2 -> v6 -> t
+We find we can add a flow of 5 through this path
+The updated path therefore looks like this now:
+s -> 25/25 (+5) -> v2
+v2 -> 5/15 (+5) -> v6
+v6 -> 5/20 (+5) -> t
+And residual for this path is now:
+s <- 25 <- v2
+s -> 0 -> v2
+v2 <- 5 <- v6
+v2 -> 10 -> v6
+v6 <- 5 <- t
+v6 -> 15 -> t
+🚛 📦 Updating the path s -> v3 -> v6 -> t
+We find we can add a flow of 10 through this path
+The updated path therefore looks like this now:
+s -> 10/20 (+10) -> v3
+v3 -> 10/10 (+10) -> v6
+v6 -> 15/20 (+10) -> t
+And residual for this path is now:
+s <- 10 <- v3
+s -> 10 -> v3
+v3 <- 10 <- v6
+v3 -> 0 -> v6
+v6 <- 15 <- t
+v6 -> 5 -> t
+🚛 📦 Updating the path s -> v3 -> v7 -> t
+We find we can add a flow of 10 through this path
+The updated path therefore looks like this now:
+s -> 20/20 (+10) -> v3
+v3 -> 10/10 (+10) -> v7
+v7 -> 30/30 (+10) -> t
+And residual for this path is now:
+s <- 20 <- v3
+s -> 0 -> v3
+v3 <- 10 <- v7
+v3 -> 0 -> v7
+v7 <- 30 <- t
+v7 -> 0 -> t
+👉 The system had total potential capacity of 90 but only 85 can flow through it
