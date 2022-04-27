@@ -80,7 +80,7 @@ export class BoyerMoore extends Scanner {
   }
 
   printInfo(): this {
-    console.log(this.#table)
+    console.table(this.#table)
     return this
   }
 }

@@ -64,7 +64,7 @@ export class KnuthMorrisPratt extends Scanner {
   }
 
   printInfo(): this {
-    console.dir(this.#table)
+    console.table(this.#table)
     return this
   }
 }
