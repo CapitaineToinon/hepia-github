@@ -3,84 +3,115 @@ import { max, ord } from '../python/index'
 
 export class BoyerMoore extends Scanner {
   name = 'Boyer-Moore'
-  #setSize = 256 // amount of different possible characters in ascii
-  #table: number[]
+  #setSize = 65536 // max possible values
+  #charTable: number[]
+  #offsetTable: number[]
 
-  #buildTable() {
+  scan(): this {
+    this.checkPattern()
+    this.checkSource()
+
+    this.result = []
+
+    for (let i = this.pattern.length - 1; i < this.source.length; ) {
+      let j = this.pattern.length - 1
+
+      for (; this.pattern[j] == this.source[i]; i--, j--) {
+        if (j === 0) {
+          this.logPattern(i)
+          this.result.push(i)
+          break
+        }
+      }
+
+      const a = this.#offsetTable[this.pattern.length - 1 - j]
+      const b = this.#charTable[ord(this.source[i])]
+      i += max(a, b)
+    }
+
+    return this
+  }
+
+  #buildTables() {
+    this.#buildCharTable()
+    this.#buildOffsetTable()
+  }
+
+  #buildCharTable() {
     this.checkPattern()
 
-    // Initialize all occurrences as -1
-    this.#table = new Array(this.#setSize).fill(-1, 0, this.#setSize)
+    // fill the table
+    this.#charTable = new Array(this.#setSize).fill(this.pattern.length)
 
-    // Fill the actual value of last occurrence
-    // of a character (indices of table are ascii and values are index of occurrence)
-    for (let i = 0; i < this.pattern.length; i++) {
-      this.#table[ord(this.pattern[i])] = i
+    for (let i = 0; i < this.pattern.length - 1; i++) {
+      this.#charTable[ord(this.pattern[i])] = this.pattern.length - 1 - i
     }
   }
 
-  scan(): this {
-    this.checkSource()
+  #buildOffsetTable() {
     this.checkPattern()
 
-    const positions: number[] = []
+    this.#offsetTable = new Array(this.pattern.length)
 
-    let s = 0 // s is shift of the pattern with
-    // respect to text
-    // there are n-m+1 potential alignments
-    while (s <= this.source.length - this.pattern.length) {
-      let j = this.pattern.length - 1
+    let last = this.pattern.length
 
-      /* Keep reducing index j of pattern while
-         characters of pattern and text are
-         matching at this shift s */
-      while (j >= 0 && this.pattern[j] == this.source[s + j]) {
-        j--
+    for (let i = this.pattern.length; i > 0; i--) {
+      if (this.#isPrefix(i)) {
+        last = i
       }
 
-      /* If the pattern is present at current
-         shift, then index j will become -1 after
-         the above loop */
-      if (j < 0) {
-        this.logPattern(s)
-        positions.push(s)
-
-        /* Shift the pattern so that the next
-           character in text aligns with the last
-           occurrence of it in pattern.
-           The condition s+m < n is necessary for
-           the case when pattern occurs at the end
-           of text */
-        // txt[s+m] is character after the pattern in text
-        s +=
-          s + this.pattern.length < this.source.length
-            ? this.pattern.length -
-              this.#table[ord(this.source[s + this.pattern.length])]
-            : 1
-      } else
-      /* Shift the pattern so that the bad character
-         in text aligns with the last occurrence of
-         it in pattern. The max function is used to
-         make sure that we get a positive shift.
-         We may get a negative shift if the last
-         occurrence  of bad character in pattern
-         is on the right side of the current
-         character. */
-        s += max(1, j - this.#table[ord(this.source[s + j])])
+      this.#offsetTable[this.pattern.length - i] =
+        last - 1 + this.pattern.length
     }
 
-    this.result = positions
-    return this
+    for (let i = 0; i < this.pattern.length - 1; i++) {
+      const length = this.#getSuffixLength(i)
+      this.#offsetTable[length] = this.pattern.length - 1 - i + length
+    }
+  }
+
+  #isPrefix(n: number) {
+    for (let i = n, j = 0; i < this.pattern.length; i++, j++) {
+      if (this.pattern[i] !== this.pattern[j]) {
+        return false
+      }
+    }
+
+    return true
+  }
+
+  #getSuffixLength(n: number) {
+    let length = 0
+
+    let i = n
+    let j = this.pattern.length - 1
+
+    while (i >= 0 && this.pattern[i] == this.pattern[j]) {
+      length++
+      i--
+      j--
+    }
+
+    // for (
+    //   let i = n, j = this.pattern.length - 1;
+    //   i >= 0 && this.pattern[i] == this.pattern[j];
+    //   i--, j--
+    // ) {
+    //   length++
+    // }
+
+    return length
   }
 
   override setPattern(pattern: string): this {
     super.setPattern(pattern)
-    this.#buildTable()
+    this.#buildTables()
     return this
   }
 
   printInfo(): this {
-    console.table(this.#table)
+    console.table(this.#charTable)
+    console.table(this.#offsetTable)
     return this
   }
 }

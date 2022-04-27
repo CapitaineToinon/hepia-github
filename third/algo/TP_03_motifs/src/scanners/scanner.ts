@@ -40,13 +40,11 @@ export abstract class Scanner implements IScanner {
   }
 
   getResult(): number[] {
-    let positions = this.result
-
     if (!this.zeroIndexed) {
-      positions = positions.map((i) => i + 1)
+      return this.result.map((i) => i + 1)
     }
 
-    return positions
+    return this.result
   }
 
   log(...args: unknown[]): void {
