@@ -4,32 +4,26 @@ import { max, ord } from '../python/index'
 export class BoyerMoore extends Scanner {
   name = 'Boyer-Moore'
   #setSize = 256 // amount of different possible characters in ascii
+  #table: number[]
 
-  // The preprocessing function for Boyer Moore's
-  // bad character heuristic
-  #badCharHeuristic(str: string, size: number, badchar: number[]) {
+  #buildTable() {
+    this.checkPattern()
+
     // Initialize all occurrences as -1
-    for (let i = 0; i < this.#setSize; i++) {
-      badchar[i] = -1
-    }
+    this.#table = new Array(this.#setSize).fill(-1, 0, this.#setSize)
 
     // Fill the actual value of last occurrence
     // of a character (indices of table are ascii and values are index of occurrence)
-    for (let i = 0; i < size; i++) {
-      badchar[str[i].charCodeAt(0)] = i
+    for (let i = 0; i < this.pattern.length; i++) {
+      this.#table[ord(this.pattern[i])] = i
     }
   }
 
   scan(): this {
-    this.checkBeforeScan()
+    this.checkSource()
+    this.checkPattern()
 
-    const badchar = new Array(this.#setSize)
     const positions: number[] = []
-
-    /* Fill the bad character array by calling
-       the preprocessing function badCharHeuristic()
-       for given pattern */
-    this.#badCharHeuristic(this.pattern, this.pattern.length, badchar)
 
     let s = 0 // s is shift of the pattern with
     // respect to text
@@ -61,7 +55,7 @@ export class BoyerMoore extends Scanner {
         s +=
           s + this.pattern.length < this.source.length
             ? this.pattern.length -
-              badchar[ord(this.source[s + this.pattern.length])]
+              this.#table[ord(this.source[s + this.pattern.length])]
             : 1
       } else
       /* Shift the pattern so that the bad character
@@ -72,15 +66,21 @@ export class BoyerMoore extends Scanner {
          occurrence  of bad character in pattern
          is on the right side of the current
          character. */
-        s += max(1, j - badchar[ord(this.source[s + j])])
+        s += max(1, j - this.#table[ord(this.source[s + j])])
     }
 
     this.result = positions
     return this
   }
 
+  override setPattern(pattern: string): this {
+    super.setPattern(pattern)
+    this.#buildTable()
+    return this
+  }
+
   printInfo(): this {
-    console.log('info')
+    console.log(this.#table)
     return this
   }
 }

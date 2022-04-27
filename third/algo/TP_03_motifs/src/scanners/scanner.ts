@@ -58,16 +58,16 @@ export abstract class Scanner implements IScanner {
     this.log(`Found pattern '${this.pattern}' at position ${position}`)
   }
 
-  checkBeforeScan() {
+  checkSource() {
     if (!this.source) {
       throw new Error('source is undefined')
     }
+  }
 
+  checkPattern() {
     if (!this.pattern) {
       throw new Error('pattern is undefined')
     }
-
-    this.log({ pattern: this.pattern, source: this.source })
   }
 
   abstract scan(): this

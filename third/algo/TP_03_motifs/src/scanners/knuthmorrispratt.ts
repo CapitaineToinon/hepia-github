@@ -2,8 +2,10 @@ import { Scanner } from './scanner'
 
 export class KnuthMorrisPratt extends Scanner {
   name = 'Knuth-Morris-Pratt'
+  #table: number[]
 
-  #buildTable(): number[] {
+  #buildTable() {
+    this.checkPattern()
     const table: number[] = [0]
 
     let prefix = 0
@@ -12,26 +14,26 @@ export class KnuthMorrisPratt extends Scanner {
     while (suffix < this.pattern.length) {
       if (this.pattern[prefix] === this.pattern[suffix]) {
         table[suffix] = prefix + 1
-        suffix += 1
-        prefix += 1
+        suffix++
+        prefix++
       } else if (prefix === 0) {
         table[suffix] = 0
-        suffix += 1
+        suffix++
       } else {
         prefix = table[prefix - 1]
       }
     }
 
-    return table
+    this.#table = table
   }
 
   scan(): this {
-    this.checkBeforeScan()
+    this.checkSource()
+    this.checkPattern()
 
     let sourceIdx = 0
     let patternIdx = 0
 
-    const table = this.#buildTable()
     const positions: number[] = []
 
     while (sourceIdx < this.source.length) {
@@ -45,7 +47,7 @@ export class KnuthMorrisPratt extends Scanner {
         patternIdx += 1
         sourceIdx += 1
       } else if (patternIdx > 0) {
-        patternIdx = table[patternIdx - 1]
+        patternIdx = this.#table[patternIdx - 1]
       } else {
         sourceIdx += 1
       }
@@ -55,8 +57,14 @@ export class KnuthMorrisPratt extends Scanner {
     return this
   }
 
+  override setPattern(pattern: string): this {
+    super.setPattern(pattern)
+    this.#buildTable()
+    return this
+  }
+
   printInfo(): this {
-    console.dir(this.#buildTable())
+    console.dir(this.#table)
     return this
   }
 }

@@ -8,8 +8,34 @@ export class Automates extends Scanner {
   name = 'Automates'
   #table: CharacterStateMap[]
 
+  #buildTable() {
+    this.checkPattern()
+
+    const uniqChars = [...new Set(this.pattern.split(''))]
+
+    // very important to loop on state <= pattern.length
+    // to create a final step that allows looping back
+    // on potentially overlapping patterns!
+    //
+    // we're also only creating entries for unique chars
+    // in the pattern. foreign characters needs to be handled
+    // by the search function instead.
+    this.#table = []
+
+    for (let state = 0; state <= this.pattern.length; state++) {
+      this.#table[state] = uniqChars.reduce(
+        (previous, key) => ({
+          ...previous,
+          [key]: this.#getNextState(state, key),
+        }),
+        {}
+      )
+    }
+  }
+
   scan(): this {
-    this.checkBeforeScan()
+    this.checkSource()
+    this.checkPattern()
 
     const positions: number[] = []
 
@@ -32,34 +58,32 @@ export class Automates extends Scanner {
     return this
   }
 
-  #getNextState(pattern: string, state: number, key: string) {
-    const m = pattern.length
-    // If the character c is same as next character
-    // in pattern,then simply increment state
-    if (state < m && key === pattern[state]) {
+  #getNextState(state: number, key: string) {
+    // If current character is same as next character
+    // in the pattern then just increment the state
+    if (state < this.pattern.length && key === this.pattern[state]) {
       return state + 1
     }
 
-    // ns stores the result which is next state
-    let ns: number
-    let i: number
+    let nextState: number
 
-    // ns finally contains the longest prefix
+    // next state finally contains the longest prefix
     // which is also suffix in "pat[0..state-1]c"
 
     // Start from the largest possible value
     // and stop when you find a prefix which
     // is also suffix
-    for (ns = state; ns > 0; ns--) {
-      if (key === pattern[ns - 1]) {
-        for (i = 0; i < ns - 1; i++) {
-          if (pattern[i] !== pattern[state - ns + 1 + i]) {
+    for (nextState = state; nextState > 0; nextState--) {
+      if (key === this.pattern[nextState - 1]) {
+        let i: number // we need it after the loop
+        for (i = 0; i < nextState - 1; i++) {
+          if (this.pattern[i] !== this.pattern[state - nextState + 1 + i]) {
             break
           }
         }
 
-        if (i === ns - 1) {
-          return ns
+        if (i === nextState - 1) {
+          return nextState
         }
       }
     }
@@ -68,27 +92,8 @@ export class Automates extends Scanner {
   }
 
   override setPattern(pattern: string): this {
-    this.#table = []
-    const uniqChars = [...new Set(pattern.split(''))]
-
-    // very important to loop on state <= pattern.length
-    // to create a final step that allows looping back
-    // on potentially overlapping patterns!
-    //
-    // we're also only creating entries for unique chars
-    // in the pattern. foreign characters needs to be handled
-    // by the search function instead.
-    for (let state = 0; state <= pattern.length; ++state) {
-      this.#table[state] = uniqChars.reduce(
-        (previous, key) => ({
-          ...previous,
-          [key]: this.#getNextState(pattern, state, key),
-        }),
-        {}
-      )
-    }
-
     super.setPattern(pattern)
+    this.#buildTable()
     return this
   }
 

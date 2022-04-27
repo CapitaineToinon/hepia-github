@@ -7,7 +7,8 @@ export class RabinKarp extends Scanner {
   #setSize = 256 // amount of different possible characters in ascii
 
   scan() {
-    this.checkBeforeScan()
+    this.checkSource()
+    this.checkPattern()
 
     // to match names in literature
     const d = this.#setSize
@@ -68,7 +69,10 @@ export class RabinKarp extends Scanner {
   }
 
   printInfo(): this {
-    console.log('info')
+    console.table({
+      prime: this.#prime,
+      setSize: this.#setSize,
+    })
     return this
   }
 }
