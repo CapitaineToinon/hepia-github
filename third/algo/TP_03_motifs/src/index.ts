@@ -5,7 +5,9 @@ import { hideBin } from 'yargs/helpers'
 import { createScanner } from './scanners/index'
 import { content } from './file'
 
-;(yargs(hideBin(process.argv)) as Argv)
+const args: Argv = yargs(hideBin(process.argv))
+
+args
   .command(
     '$0 <pattern> <algo> [filename] [options]',
     'scan a file based on a pattern',
