@@ -44,12 +44,12 @@ export class KnuthMorrisPratt extends Scanner {
           positions.push(position)
         }
 
-        patternIdx += 1
-        sourceIdx += 1
+        patternIdx++
+        sourceIdx++
       } else if (patternIdx > 0) {
         patternIdx = this.#table[patternIdx - 1]
       } else {
-        sourceIdx += 1
+        sourceIdx++
       }
     }
 
