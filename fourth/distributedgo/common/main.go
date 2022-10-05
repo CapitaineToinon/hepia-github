@@ -23,24 +23,31 @@ type Transaction struct {
 	Amount   int    `json:"amount"`
 }
 
-func Send(msg Message, ip string, port string) error {
+func Send(msg Message, ip string, port string) ([]byte, error) {
 	con, err := net.Dial("tcp", fmt.Sprintf("%s:%s", ip, port))
 
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	b, err := json.Marshal(msg)
 
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	_, err = con.Write(b)
 
 	if err != nil {
-		return nil
+		return nil, err
 	}
 
-	return nil
+	reply := make([]byte, 1024)
+	_, err = con.Read(reply)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return reply, nil
 }

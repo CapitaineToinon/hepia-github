@@ -2,6 +2,7 @@ package client
 
 import (
 	"capitainetoinon/distributed/common"
+	"log"
 )
 
 func Start(to string, port string) error {
@@ -15,5 +16,12 @@ func Start(to string, port string) error {
 		},
 	}
 
-	return common.Send(msg, to, port)
+	bytes, err := common.Send(msg, to, port)
+
+	if err != nil {
+		return err
+	}
+
+	log.Println(string(bytes))
+	return nil
 }

@@ -31,6 +31,7 @@ func Start(path string, port string) error {
 
 	log.Println("listening...")
 
+	var reachConn net.Conn
 	reach := false
 	count := 0
 
@@ -56,8 +57,10 @@ func Start(path string, port string) error {
 
 			if !is_from_neighbour(me, msg) && !reach {
 				reach = true
+				reachConn = c
 				go process(msg, c)
 
+				log.Println("from client")
 				for _, n := range me.Neighbours {
 					go common.Send(copy, n.Address, port)
 				}
@@ -69,6 +72,7 @@ func Start(path string, port string) error {
 
 			if !reach {
 				reach = true
+				reachConn = c
 				go process(msg, c)
 
 				for _, n := range me.Neighbours {
@@ -79,6 +83,10 @@ func Start(path string, port string) error {
 			if count >= len(me.Neighbours) {
 				reach = false
 				count = 0
+
+				// time to acknoledge
+				reachConn.Write([]byte("ok"))
+				reachConn.Close()
 			}
 		}()
 	}
