@@ -9,18 +9,26 @@ import (
 const (
 	Create string = "create"
 	Vote   string = "vote"
+	Get    string = "get"
+)
+
+var (
+	uuid            int      = 0
+	NeedBroadcast   []string = []string{Create, Vote}
+	NeedAcknowledge []string = []string{Vote}
 )
 
 type Message struct {
 	Source      string      `json:"source"`
 	Operation   string      `json:"operation"`
-	Transaction Transaction `json:"transaction"`
+	Transaction Transaction `json:"transaction,omitempty"`
 }
 
 type Transaction struct {
-	Sender   string `json:"sender"`
-	Receiver string `json:"receiver"`
-	Amount   int    `json:"amount"`
+	Id       int    `jsong:"id,omitempty"`
+	Sender   string `json:"sender,omitempty"`
+	Receiver string `json:"receiver,omitempty"`
+	Amount   int    `json:"amount,omitempty"`
 }
 
 func Send(msg Message, ip string, port string) ([]byte, error) {
@@ -50,4 +58,30 @@ func Send(msg Message, ip string, port string) ([]byte, error) {
 	}
 
 	return reply, nil
+}
+
+func NextUuid() int {
+	uuid++
+	return uuid
+}
+
+func Contains[K comparable](input []K, value K) bool {
+	for _, n := range input {
+		if n == value {
+			return true
+		}
+	}
+
+	return false
+}
+
+func Map[K any, T any](data []K, f func(K) T) []T {
+
+	mapped := make([]T, len(data))
+
+	for i, e := range data {
+		mapped[i] = f(e)
+	}
+
+	return mapped
 }

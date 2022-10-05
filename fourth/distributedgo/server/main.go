@@ -10,7 +10,18 @@ import (
 	"net"
 )
 
-var transactions []common.Transaction
+type Global struct {
+	Me           *yaml.Node
+	Port         string
+	ReachConn    net.Conn
+	Transactions []common.Transaction
+	ReachMsg     *common.Message
+	Responses    [][]byte
+	Reach        bool
+	Count        int
+}
+
+var state Global
 
 func Start(path string, port string) error {
 	me, err := yaml.Parse(path)
@@ -29,11 +40,18 @@ func Start(path string, port string) error {
 
 	defer server.Close()
 
-	log.Println("listening...")
+	state = Global{
+		Me:           me,
+		Port:         port,
+		Transactions: nil,
+		ReachConn:    nil,
+		ReachMsg:     nil,
+		Responses:    nil,
+		Reach:        false,
+		Count:        0,
+	}
 
-	var reachConn net.Conn
-	reach := false
-	count := 0
+	log.Println("listening...")
 
 	for {
 		c, err := server.Accept()
@@ -52,63 +70,93 @@ func Start(path string, port string) error {
 				return
 			}
 
-			copy := msg
-			copy.Source = me.Address
-
-			if !is_from_neighbour(me, msg) && !reach {
-				reach = true
-				reachConn = c
-				go process(msg, c)
-
-				log.Println("from client")
-				for _, n := range me.Neighbours {
-					go common.Send(copy, n.Address, port)
-				}
-
+			if is_client(msg) {
+				reached(msg, c)
 				return
 			}
 
-			count++
-
-			if !reach {
-				reach = true
-				reachConn = c
-				go process(msg, c)
-
-				for _, n := range me.Neighbours {
-					go common.Send(copy, n.Address, port)
-				}
+			state.Count++
+			if state.Count == len(state.Me.Neighbours) {
+				go acknowledged()
+				return
 			}
 
-			if count >= len(me.Neighbours) {
-				reach = false
-				count = 0
-
-				// time to acknoledge
-				reachConn.Write([]byte("ok"))
-				reachConn.Close()
+			if !state.Reach {
+				reached(msg, c)
 			}
 		}()
 	}
 }
 
-func is_from_neighbour(me *yaml.Node, message common.Message) bool {
-	for _, n := range me.Neighbours {
-		if n.Address == message.Source {
-			return true
+func is_client(message common.Message) bool {
+	strings := common.Map(state.Me.Neighbours, func(n yaml.Node) string {
+		return n.Address
+	})
+	return !common.Contains(strings, message.Source)
+}
+
+func reached(msg common.Message, conn net.Conn) {
+	log.Printf("Message of type %s from %s\n", msg.Operation, msg.Source)
+
+	state.Reach = true
+	state.ReachConn = conn
+	state.ReachMsg = &msg
+
+	switch state.ReachMsg.Operation {
+	case common.Create:
+		msg.Transaction.Id = common.NextUuid()
+		state.Transactions = append(state.Transactions, msg.Transaction)
+		bytes, _ := json.Marshal(msg.Transaction)
+		state.ReachConn.Write(bytes)
+	case common.Vote:
+		// todo
+	case common.Get:
+		bytes, _ := json.Marshal(state.Transactions)
+		state.ReachConn.Write(bytes)
+	}
+
+	if common.Contains(common.NeedBroadcast, state.ReachMsg.Operation) {
+		copy := msg
+		copy.Source = state.Me.Address
+
+		for _, n := range state.Me.Neighbours {
+			addr := n.Address
+			go func() {
+				bytes, _ := common.Send(copy, addr, state.Port)
+				state.Responses = append(state.Responses, bytes)
+			}()
 		}
 	}
 
-	return false
+	if !common.Contains(common.NeedAcknowledge, state.ReachMsg.Operation) {
+		state.ReachConn.Close()
+		state.ReachConn = nil
+	}
+
 }
 
-func process(msg common.Message, c net.Conn) {
-	switch msg.Operation {
+func acknowledged() {
+	switch state.ReachMsg.Operation {
 	case common.Create:
-		log.Println("creating transaction")
-		transactions = append(transactions, msg.Transaction)
+		// message doesn't need acknowledgement
+		// reponse already sent
 	case common.Vote:
 		log.Println("vote message")
-		// transactions = append(transactions, msg.Transaction)
+	}
+
+	if state.ReachConn != nil {
+		state.ReachConn.Close()
+	}
+
+	// return the node to a reachable state
+	state = Global{
+		Me:           state.Me,
+		Port:         state.Port,
+		Transactions: state.Transactions,
+		ReachConn:    nil,
+		ReachMsg:     nil,
+		Responses:    nil,
+		Reach:        false,
+		Count:        0,
 	}
 }
