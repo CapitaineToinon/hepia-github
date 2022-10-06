@@ -1,5 +1,7 @@
 package data
 
+import "fmt"
+
 type Transaction struct {
 	Id       int    `json:"id,omitempty"`
 	Sender   string `json:"sender,omitempty"`
@@ -28,4 +30,22 @@ func Create(t CreateTransaction) Transaction {
 	id++
 
 	return created
+}
+
+func Fake(fake Transaction) (Transaction, error) {
+	index := -1
+
+	for i, transaction := range Transactions {
+		if transaction.Id == fake.Id {
+			index = i
+			break
+		}
+	}
+
+	if index == -1 {
+		return Transaction{}, fmt.Errorf("transaction with id %d not found", fake.Id)
+	}
+
+	Transactions[index] = fake
+	return fake, nil
 }

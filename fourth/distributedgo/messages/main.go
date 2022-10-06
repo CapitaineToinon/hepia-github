@@ -18,6 +18,11 @@ type CommonMessage struct {
 	Payload         interface{} `json:"payload"`
 }
 
+type CommonResponse struct {
+	Message string      `json:"message"`
+	Data    interface{} `json:"data"`
+}
+
 func (c CommonMessage) Reach() ([]byte, error) {
 	var value map[string]interface{}
 	var bytes []byte
@@ -46,6 +51,15 @@ func (c CommonMessage) Reach() ([]byte, error) {
 		message = msg
 	case "get":
 		message = GetMessage{}
+	case "fake":
+		var msg FakeMessage
+		err = json.Unmarshal(bytes, &msg)
+
+		if err != nil {
+			return nil, err
+		}
+
+		message = msg
 	default:
 		return nil, fmt.Errorf("operation not found")
 	}

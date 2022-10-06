@@ -1,11 +1,12 @@
 package commands
 
-type ClientCmd struct {
+type ClientCommand struct {
 	Create CreateCommand `command:"create"`
 	Get    GetCommand    `command:"get"`
+	Fake   FakeCommand   `command:"fake"`
 	// Vote            VoteCmd              `command:"vote"`
 }
 
-func (c ClientCmd) Execute([]string) error {
+func (c ClientCommand) Execute([]string) error {
 	return nil
 }

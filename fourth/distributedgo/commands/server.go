@@ -10,7 +10,7 @@ import (
 	"net"
 )
 
-type ServerCmd struct {
+type ServerCommand struct {
 	Config string `long:"config" description:"config file to load" required:"true"`
 	Port   string `long:"port" description:"the port to use" default:"3000"`
 }
@@ -51,18 +51,23 @@ func (s *Server) Broadcast(msg messages.CommonMessage) {
 	}
 }
 
-func (s *Server) OnReach(c net.Conn, msg messages.CommonMessage) {
+func (s *Server) OnReach(c net.Conn, msg messages.CommonMessage) error {
 	s.Reach = true
 
 	if !msg.WithAcknowledge {
 		bytes, err := msg.Reach()
 
 		if err != nil {
-			return
+			return err
 		}
 
-		c.Write(bytes)
-		c.Close()
+		if _, err := c.Write(bytes); err != nil {
+			return err
+		}
+
+		if err := c.Close(); err != nil {
+			return err
+		}
 	} else {
 		s.PendingConn = c
 		// will answer later
@@ -73,6 +78,8 @@ func (s *Server) OnReach(c net.Conn, msg messages.CommonMessage) {
 	} else {
 		s.Acknowledged(msg)
 	}
+
+	return nil
 }
 
 func (s *Server) Acknowledged(msg messages.CommonMessage) {
@@ -105,11 +112,15 @@ func (s *Server) Start() error {
 			err = d.Decode(&msg)
 
 			if err != nil {
+				log.Println(err)
 				return
 			}
 
 			if msg.Source == "client" {
-				s.OnReach(c, msg)
+				if err := s.OnReach(c, msg); err != nil {
+					log.Panic(err)
+				}
+
 				return
 			}
 
@@ -120,13 +131,15 @@ func (s *Server) Start() error {
 			}
 
 			if !s.Reach {
-				s.OnReach(c, msg)
+				if err := s.OnReach(c, msg); err != nil {
+					log.Panic(err)
+				}
 			}
 		}()
 	}
 }
 
-func (cmd ServerCmd) Execute([]string) error {
+func (cmd ServerCommand) Execute([]string) error {
 	me, err := yaml.Parse(cmd.Config)
 
 	if err != nil {
