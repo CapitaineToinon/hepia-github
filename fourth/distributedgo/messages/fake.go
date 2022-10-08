@@ -2,7 +2,6 @@ package messages
 
 import (
 	"capitainetoinon/distributed/data"
-	"encoding/json"
 )
 
 type FakeMessage struct {
@@ -20,7 +19,7 @@ type FakeResponse struct {
 	Amount   int    `json:"amount"`
 }
 
-func (c FakeMessage) Reach() ([]byte, error) {
+func (c FakeMessage) Reach() CommonResponse {
 	faked, err := data.Fake(data.Transaction{
 		Id:       c.Id,
 		Sender:   c.Sender,
@@ -29,21 +28,20 @@ func (c FakeMessage) Reach() ([]byte, error) {
 	})
 
 	if err != nil {
-		return nil, err
+		return CommonResponse{
+			Message: err.Error(),
+			Data:    nil,
+		}
 	}
 
-	response := FakeResponse{
-		Id:       faked.Id,
-		Sender:   faked.Sender,
-		Receiver: faked.Receiver,
-		Amount:   faked.Amount,
+	return CommonResponse{
+		Message:    "ok",
+		Operiation: "fake",
+		Data: FakeResponse{
+			Id:       faked.Id,
+			Sender:   faked.Sender,
+			Receiver: faked.Receiver,
+			Amount:   faked.Amount,
+		},
 	}
-
-	bytes, err := json.Marshal(response)
-
-	if err != nil {
-		return nil, err
-	}
-
-	return bytes, nil
 }

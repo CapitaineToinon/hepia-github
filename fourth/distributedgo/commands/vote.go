@@ -5,7 +5,7 @@ import (
 	"fmt"
 )
 
-type FakeCommand struct {
+type VoteCommand struct {
 	CommonOptions
 	Id       int    `long:"id" required:"true"`
 	Sender   string `long:"sender" required:"true"`
@@ -13,13 +13,13 @@ type FakeCommand struct {
 	Amount   int    `long:"amount" required:"true"`
 }
 
-func (c FakeCommand) Execute([]string) error {
+func (c VoteCommand) Execute([]string) error {
 	msg := messages.CommonMessage{
 		Source:          "client",
-		Operiation:      "fake",
-		Broadcast:       false,
-		WithAcknowledge: false,
-		Payload: messages.FakeMessage{
+		Operiation:      "vote",
+		Broadcast:       true,
+		WithAcknowledge: true,
+		Payload: messages.VoteMessage{
 			Id:       c.Id,
 			Sender:   c.Sender,
 			Receiver: c.Receiver,
@@ -33,13 +33,16 @@ func (c FakeCommand) Execute([]string) error {
 		return err
 	}
 
-	var resp messages.FakeResponse
+	var resp messages.VoteResponse
 	messages.UnmarshalData(common.Data, &resp)
 
 	if err != nil {
 		return err
 	}
 
-	fmt.Println(resp)
+	fmt.Printf("good %d\n", resp.Good)
+	fmt.Printf("Total %d\n", resp.Total)
+	fmt.Printf("transaction found in %d%% of the nodes (%d/%d)\n", resp.Good*100/resp.Total, resp.Good, resp.Total)
+
 	return nil
 }

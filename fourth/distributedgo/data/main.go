@@ -1,6 +1,9 @@
 package data
 
-import "fmt"
+import (
+	"fmt"
+	"reflect"
+)
 
 type Transaction struct {
 	Id       int    `json:"id,omitempty"`
@@ -33,14 +36,7 @@ func Create(t CreateTransaction) Transaction {
 }
 
 func Fake(fake Transaction) (Transaction, error) {
-	index := -1
-
-	for i, transaction := range Transactions {
-		if transaction.Id == fake.Id {
-			index = i
-			break
-		}
-	}
+	index := FindIndex(fake)
 
 	if index == -1 {
 		return Transaction{}, fmt.Errorf("transaction with id %d not found", fake.Id)
@@ -48,4 +44,28 @@ func Fake(fake Transaction) (Transaction, error) {
 
 	Transactions[index] = fake
 	return fake, nil
+}
+
+func FindIndex(transaction Transaction) int {
+	for i, candidate := range Transactions {
+		if transaction.Id == candidate.Id {
+			return i
+		}
+	}
+
+	return -1
+}
+
+func Has(transaction Transaction) bool {
+	return FindIndex(transaction) != -1
+}
+
+func HasExact(transaction Transaction) bool {
+	index := FindIndex(transaction)
+
+	if index == -1 {
+		return false
+	}
+
+	return reflect.DeepEqual(transaction, Transactions[index])
 }

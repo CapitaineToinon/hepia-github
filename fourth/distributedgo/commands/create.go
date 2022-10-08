@@ -2,8 +2,6 @@ package commands
 
 import (
 	"capitainetoinon/distributed/messages"
-	"capitainetoinon/distributed/utils"
-	"encoding/json"
 	"fmt"
 )
 
@@ -27,20 +25,14 @@ func (c CreateCommand) Execute([]string) error {
 		},
 	}
 
-	bytes, err := json.Marshal(msg)
-
-	if err != nil {
-		return err
-	}
-
-	received, err := utils.Send(c.Ip, c.Port, bytes)
+	common, err := msg.Execute(c.Ip, c.Port)
 
 	if err != nil {
 		return err
 	}
 
 	var resp messages.CreateResponse
-	err = json.Unmarshal(received, &resp)
+	messages.UnmarshalData(common.Data, &resp)
 
 	if err != nil {
 		return err

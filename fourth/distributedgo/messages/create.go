@@ -2,7 +2,6 @@ package messages
 
 import (
 	"capitainetoinon/distributed/data"
-	"encoding/json"
 )
 
 type CreateMessage struct {
@@ -18,25 +17,21 @@ type CreateResponse struct {
 	Amount   int    `json:"amount"`
 }
 
-func (c CreateMessage) Reach() ([]byte, error) {
+func (c CreateMessage) Reach() CommonResponse {
 	created := data.Create(data.CreateTransaction{
 		Sender:   c.Sender,
 		Receiver: c.Receiver,
 		Amount:   c.Amount,
 	})
 
-	response := CreateResponse{
-		Id:       created.Id,
-		Sender:   created.Sender,
-		Receiver: created.Receiver,
-		Amount:   created.Amount,
+	return CommonResponse{
+		Message:    "ok",
+		Operiation: "create",
+		Data: CreateResponse{
+			Id:       created.Id,
+			Sender:   created.Sender,
+			Receiver: created.Receiver,
+			Amount:   created.Amount,
+		},
 	}
-
-	bytes, err := json.Marshal(response)
-
-	if err != nil {
-		return nil, err
-	}
-
-	return bytes, nil
 }

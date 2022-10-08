@@ -1,13 +1,18 @@
 package messages
 
 import (
+	"capitainetoinon/distributed/utils"
 	"encoding/json"
 	"fmt"
 	"log"
 )
 
 type Reachable interface {
-	Reach() ([]byte, error)
+	Reach() CommonResponse
+}
+
+type Aggregatable interface {
+	Aggregate([][]byte) CommonResponse
 }
 
 type CommonMessage struct {
@@ -19,11 +24,12 @@ type CommonMessage struct {
 }
 
 type CommonResponse struct {
-	Message string      `json:"message"`
-	Data    interface{} `json:"data"`
+	Message    string      `json:"message"`
+	Operiation string      `json:"operation"`
+	Data       interface{} `json:"data"`
 }
 
-func (c CommonMessage) Reach() ([]byte, error) {
+func (c CommonMessage) Reach() (*CommonResponse, error) {
 	var value map[string]interface{}
 	var bytes []byte
 	var err error
@@ -60,14 +66,87 @@ func (c CommonMessage) Reach() ([]byte, error) {
 		}
 
 		message = msg
+	case "vote":
+		var msg VoteMessage
+		err = json.Unmarshal(bytes, &msg)
+
+		if err != nil {
+			return nil, err
+		}
+
+		message = msg
 	default:
 		return nil, fmt.Errorf("operation not found")
 	}
+
+	log.Printf("Operation of type %s received by %s\n", c.Operiation, c.Source)
+
+	response := message.Reach()
+	return &response, nil
+}
+
+func (c CommonMessage) Marshal() ([]byte, error) {
+	return json.Marshal(c)
+}
+
+func (c CommonResponse) Aggregate(responses [][]byte) (*CommonResponse, error) {
+	var aggregatable Aggregatable
+
+	switch c.Operiation {
+	case "vote":
+		aggregatable = c.Data.(VoteResponse)
+	default:
+		// assuming the response cannot be aggregated but that's fine
+		return &c, nil
+	}
+
+	response := aggregatable.Aggregate(responses)
+	return &response, nil
+}
+
+func (c CommonResponse) Marshal() ([]byte, error) {
+	return json.Marshal(c)
+}
+
+func (c CommonResponse) Ok() bool {
+	return c.Message == "ok"
+}
+
+func (c CommonMessage) Execute(ip string, port string) (*CommonResponse, error) {
+	bytes, err := c.Marshal()
 
 	if err != nil {
 		return nil, err
 	}
 
-	log.Printf("Operation of type %s send by %s\n", c.Operiation, c.Source)
-	return message.Reach()
+	received, err := utils.Send(ip, port, bytes)
+
+	if err != nil {
+		return nil, err
+	}
+
+	var resp CommonResponse
+
+	if err := json.Unmarshal(received, &resp); err != nil {
+		return nil, err
+	}
+
+	return &resp, nil
+}
+
+func UnmarshalData[T any](data interface{}, output *T) error {
+	value := data.(map[string]interface{})
+	bytes, err := json.Marshal(value)
+
+	if err != nil {
+		return err
+	}
+
+	err = json.Unmarshal(bytes, output)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

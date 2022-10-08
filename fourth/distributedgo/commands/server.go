@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"sync"
 )
 
 type ServerCommand struct {
@@ -21,69 +22,20 @@ type PendingConnection struct {
 }
 
 type Server struct {
-	Me               *yaml.Node
-	Port             string
-	PendingConn      net.Conn
-	PendingResponses [][]byte
-	Reach            bool
-	Count            int
+	Me                *yaml.Node
+	Port              string
+	ParentConn        net.Conn
+	ChildrenResponses [][]byte
+	Reach             bool
+	Count             int
 }
 
 func (s *Server) Reset() {
 	s.Reach = false
 	s.Count = 0
-	s.PendingConn = nil
-	s.PendingResponses = nil
+	s.ParentConn = nil
+	s.ChildrenResponses = nil
 	log.Println("server reset")
-}
-
-func (s *Server) Broadcast(msg messages.CommonMessage) {
-	copy := msg
-	copy.Source = s.Me.Address
-
-	for _, n := range s.Me.Neighbours {
-		addr := n.Address
-		go func() {
-			bytes, _ := json.Marshal(copy)
-			resp, _ := utils.Send(addr, s.Port, bytes)
-			s.PendingResponses = append(s.PendingResponses, resp)
-		}()
-	}
-}
-
-func (s *Server) OnReach(c net.Conn, msg messages.CommonMessage) error {
-	s.Reach = true
-
-	if !msg.WithAcknowledge {
-		bytes, err := msg.Reach()
-
-		if err != nil {
-			return err
-		}
-
-		if _, err := c.Write(bytes); err != nil {
-			return err
-		}
-
-		if err := c.Close(); err != nil {
-			return err
-		}
-	} else {
-		s.PendingConn = c
-		// will answer later
-	}
-
-	if msg.Broadcast {
-		s.Broadcast(msg)
-	} else {
-		s.Acknowledged(msg)
-	}
-
-	return nil
-}
-
-func (s *Server) Acknowledged(msg messages.CommonMessage) {
-	s.Reset()
 }
 
 func (s *Server) Start() error {
@@ -116,27 +68,150 @@ func (s *Server) Start() error {
 				return
 			}
 
+			s.ParentConn = c
+
+			if !msg.Broadcast {
+				go func() {
+					defer s.Reset()
+
+					response, err := msg.Reach()
+
+					if err != nil {
+						log.Println(err)
+						return
+					}
+
+					bytes, err := response.Marshal()
+
+					if err != nil {
+						log.Println(err)
+						return
+					}
+
+					if _, err := c.Write(bytes); err != nil {
+						log.Println(err)
+						return
+					}
+
+					if err := c.Close(); err != nil {
+						log.Println(err)
+						return
+					}
+				}()
+
+				return
+			}
+
 			if msg.Source == "client" {
-				if err := s.OnReach(c, msg); err != nil {
-					log.Panic(err)
-				}
+				func() {
+					defer s.Reset()
+					s.Reach = true
+
+					log.Println("from client")
+
+					copy := msg
+					copy.Source = s.Me.Address
+					var wg sync.WaitGroup
+
+					for _, n := range s.Me.Neighbours {
+						addr := n.Address
+						wg.Add(1)
+						go func() {
+							log.Printf("sending to %s\n", addr)
+							bytes, _ := json.Marshal(copy)
+							resp, _ := utils.Send(addr, s.Port, bytes)
+							s.ChildrenResponses = append(s.ChildrenResponses, resp)
+							wg.Done()
+							log.Printf("received from %s\n", addr)
+						}()
+					}
+
+					response, _ := msg.Reach()
+
+					if msg.Broadcast {
+						wg.Wait()
+						log.Println(response)
+						response, _ = response.Aggregate(s.ChildrenResponses)
+					}
+
+					bytes, _ := response.Marshal()
+					c.Write(bytes)
+					c.Close()
+				}()
 
 				return
 			}
 
 			s.Count++
-			if s.Count == len(s.Me.Neighbours) {
-				go s.Acknowledged(msg)
-				return
-			}
 
 			if !s.Reach {
-				if err := s.OnReach(c, msg); err != nil {
-					log.Panic(err)
+				s.Reach = true
+				s.ParentConn = c
+
+				log.Println("from neighbour")
+
+				copy := msg
+				copy.Source = s.Me.Address
+				var wg sync.WaitGroup
+				var responses [][]byte
+
+				for _, n := range s.Me.Neighbours {
+					addr := n.Address
+
+					if addr == msg.Source {
+						// broadcast to all neighbours except parent
+						continue
+					}
+
+					wg.Add(1)
+					go func() {
+						log.Printf("sending to %s\n", addr)
+						bytes, _ := json.Marshal(copy)
+						resp, _ := utils.Send(addr, s.Port, bytes)
+						responses = append(responses, resp)
+						wg.Done()
+						log.Printf("received from %s\n", addr)
+					}()
 				}
+
+				wg.Wait()
+			}
+
+			log.Println("now final send maybe?")
+			log.Printf("count %d len %d\n", s.Count, len(s.Me.Neighbours))
+
+			if s.Count >= len(s.Me.Neighbours)-1 && s.ParentConn != nil {
+				func() {
+					defer s.Reset()
+
+					log.Println("respond to parent")
+					response, err := msg.Reach()
+					bytes, _ := response.Marshal()
+
+					if err != nil {
+						log.Println(err)
+						return
+					}
+
+					if _, err := s.ParentConn.Write(bytes); err != nil {
+						log.Println(err)
+						return
+					}
+
+					if err := s.ParentConn.Close(); err != nil {
+						log.Println(err)
+						return
+					}
+				}()
+
+				return
 			}
 		}()
 	}
+}
+
+func (s *Server) Broadcast() {
+
 }
 
 func (cmd ServerCommand) Execute([]string) error {
