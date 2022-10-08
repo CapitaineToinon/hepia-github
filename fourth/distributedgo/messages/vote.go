@@ -41,6 +41,10 @@ func (c VoteMessage) Reach() CommonResponse {
 }
 
 func (c VoteResponse) Aggregate(responses [][]byte) CommonResponse {
+	log.Println("aggregating")
+	log.Print("me is ")
+	log.Println(c)
+
 	for i, b := range responses {
 		var common CommonResponse
 
@@ -61,12 +65,15 @@ func (c VoteResponse) Aggregate(responses [][]byte) CommonResponse {
 			}
 		}
 
-		log.Println(i)
+		log.Printf("index %d\n", i)
 		log.Println(resp)
 
 		c.Good += resp.Good
 		c.Total += resp.Total
 	}
+
+	log.Print("done with ")
+	log.Println(c)
 
 	return CommonResponse{
 		Message: "ok",

@@ -112,6 +112,7 @@ func (s *Server) Start() error {
 					copy := msg
 					copy.Source = s.Me.Address
 					var wg sync.WaitGroup
+					var responses [][]byte
 
 					for _, n := range s.Me.Neighbours {
 						addr := n.Address
@@ -120,7 +121,7 @@ func (s *Server) Start() error {
 							log.Printf("sending to %s\n", addr)
 							bytes, _ := json.Marshal(copy)
 							resp, _ := utils.Send(addr, s.Port, bytes)
-							s.ChildrenResponses = append(s.ChildrenResponses, resp)
+							responses = append(responses, resp)
 							wg.Done()
 							log.Printf("received from %s\n", addr)
 						}()
@@ -130,8 +131,7 @@ func (s *Server) Start() error {
 
 					if msg.Broadcast {
 						wg.Wait()
-						log.Println(response)
-						response, _ = response.Aggregate(s.ChildrenResponses)
+						response, _ = response.Aggregate(responses)
 					}
 
 					bytes, _ := response.Marshal()
@@ -153,7 +153,6 @@ func (s *Server) Start() error {
 				copy := msg
 				copy.Source = s.Me.Address
 				var wg sync.WaitGroup
-				var responses [][]byte
 
 				for _, n := range s.Me.Neighbours {
 					addr := n.Address
@@ -168,7 +167,7 @@ func (s *Server) Start() error {
 						log.Printf("sending to %s\n", addr)
 						bytes, _ := json.Marshal(copy)
 						resp, _ := utils.Send(addr, s.Port, bytes)
-						responses = append(responses, resp)
+						s.ChildrenResponses = append(s.ChildrenResponses, resp)
 						wg.Done()
 						log.Printf("received from %s\n", addr)
 					}()
@@ -186,6 +185,7 @@ func (s *Server) Start() error {
 
 					log.Println("respond to parent")
 					response, err := msg.Reach()
+					response, _ = response.Aggregate(s.ChildrenResponses)
 					bytes, _ := response.Marshal()
 
 					if err != nil {
