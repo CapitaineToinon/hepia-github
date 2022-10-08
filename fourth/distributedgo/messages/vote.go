@@ -3,7 +3,6 @@ package messages
 import (
 	"capitainetoinon/distributed/data"
 	"encoding/json"
-	"log"
 )
 
 type VoteMessage struct {
@@ -41,17 +40,14 @@ func (c VoteMessage) Reach() CommonResponse {
 }
 
 func (c VoteResponse) Aggregate(responses [][]byte) CommonResponse {
-	log.Println("aggregating")
-	log.Print("me is ")
-	log.Println(c)
-
-	for i, b := range responses {
+	for _, b := range responses {
 		var common CommonResponse
 
 		if err := json.Unmarshal(b, &common); err != nil {
 			return CommonResponse{
-				Message: err.Error(),
-				Data:    nil,
+				Message:    err.Error(),
+				Operiation: "vote",
+				Data:       nil,
 			}
 		}
 
@@ -60,23 +56,19 @@ func (c VoteResponse) Aggregate(responses [][]byte) CommonResponse {
 
 		if err != nil {
 			return CommonResponse{
-				Message: err.Error(),
-				Data:    nil,
+				Message:    err.Error(),
+				Operiation: "vote",
+				Data:       nil,
 			}
 		}
-
-		log.Printf("index %d\n", i)
-		log.Println(resp)
 
 		c.Good += resp.Good
 		c.Total += resp.Total
 	}
 
-	log.Print("done with ")
-	log.Println(c)
-
 	return CommonResponse{
-		Message: "ok",
-		Data:    c,
+		Message:    "ok",
+		Operiation: "vote",
+		Data:       c,
 	}
 }

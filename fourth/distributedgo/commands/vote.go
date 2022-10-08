@@ -2,7 +2,6 @@ package commands
 
 import (
 	"capitainetoinon/distributed/messages"
-	"fmt"
 )
 
 type VoteCommand struct {
@@ -15,10 +14,9 @@ type VoteCommand struct {
 
 func (c VoteCommand) Execute([]string) error {
 	msg := messages.CommonMessage{
-		Source:          "client",
-		Operiation:      "vote",
-		Broadcast:       true,
-		WithAcknowledge: true,
+		Source:     "client",
+		Operiation: "vote",
+		Broadcast:  true,
 		Payload: messages.VoteMessage{
 			Id:       c.Id,
 			Sender:   c.Sender,
@@ -27,22 +25,5 @@ func (c VoteCommand) Execute([]string) error {
 		},
 	}
 
-	common, err := msg.Execute(c.Ip, c.Port)
-
-	if err != nil {
-		return err
-	}
-
-	var resp messages.VoteResponse
-	messages.UnmarshalData(common.Data, &resp)
-
-	if err != nil {
-		return err
-	}
-
-	fmt.Printf("good %d\n", resp.Good)
-	fmt.Printf("Total %d\n", resp.Total)
-	fmt.Printf("transaction found in %d%% of the nodes (%d/%d)\n", resp.Good*100/resp.Total, resp.Good, resp.Total)
-
-	return nil
+	return msg.Execute(c.Ip, c.Port)
 }

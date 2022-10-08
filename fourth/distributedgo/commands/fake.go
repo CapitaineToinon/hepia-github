@@ -2,7 +2,6 @@ package commands
 
 import (
 	"capitainetoinon/distributed/messages"
-	"fmt"
 )
 
 type FakeCommand struct {
@@ -15,10 +14,9 @@ type FakeCommand struct {
 
 func (c FakeCommand) Execute([]string) error {
 	msg := messages.CommonMessage{
-		Source:          "client",
-		Operiation:      "fake",
-		Broadcast:       false,
-		WithAcknowledge: false,
+		Source:     "client",
+		Operiation: "fake",
+		Broadcast:  false,
 		Payload: messages.FakeMessage{
 			Id:       c.Id,
 			Sender:   c.Sender,
@@ -27,19 +25,5 @@ func (c FakeCommand) Execute([]string) error {
 		},
 	}
 
-	common, err := msg.Execute(c.Ip, c.Port)
-
-	if err != nil {
-		return err
-	}
-
-	var resp messages.FakeResponse
-	messages.UnmarshalData(common.Data, &resp)
-
-	if err != nil {
-		return err
-	}
-
-	fmt.Println(resp)
-	return nil
+	return msg.Execute(c.Ip, c.Port)
 }

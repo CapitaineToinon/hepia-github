@@ -1,6 +1,7 @@
 package messages
 
 import (
+	"bytes"
 	"capitainetoinon/distributed/utils"
 	"encoding/json"
 	"fmt"
@@ -16,11 +17,10 @@ type Aggregatable interface {
 }
 
 type CommonMessage struct {
-	Source          string      `json:"source"`
-	Operiation      string      `json:"operation"`
-	Broadcast       bool        `json:"broadcast"`
-	WithAcknowledge bool        `json:"acknowledge"`
-	Payload         interface{} `json:"payload"`
+	Source     string      `json:"source"`
+	Operiation string      `json:"operation"`
+	Broadcast  bool        `json:"broadcast"`
+	Payload    interface{} `json:"payload"`
 }
 
 type CommonResponse struct {
@@ -93,6 +93,8 @@ func (c CommonResponse) Aggregate(responses [][]byte) (*CommonResponse, error) {
 	var aggregatable Aggregatable
 
 	switch c.Operiation {
+	case "create":
+		aggregatable = c.Data.(CreateResponse)
 	case "vote":
 		aggregatable = c.Data.(VoteResponse)
 	default:
@@ -112,26 +114,49 @@ func (c CommonResponse) Ok() bool {
 	return c.Message == "ok"
 }
 
-func (c CommonMessage) Execute(ip string, port string) (*CommonResponse, error) {
+func (c CommonMessage) Execute(ip string, port string) error {
 	bytes, err := c.Marshal()
 
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	received, err := utils.Send(ip, port, bytes)
 
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	var resp CommonResponse
-
 	if err := json.Unmarshal(received, &resp); err != nil {
+		return err
+	}
+
+	output, err := resp.PrettyString()
+
+	if err != nil {
+		return err
+	}
+
+	fmt.Println(*output)
+	return nil
+}
+
+func (c CommonResponse) PrettyString() (*string, error) {
+	b, err := json.Marshal(c)
+
+	if err != nil {
+		fmt.Println(err)
 		return nil, err
 	}
 
-	return &resp, nil
+	dst := &bytes.Buffer{}
+	if err := json.Indent(dst, b, "", "  "); err != nil {
+		return nil, err
+	}
+
+	output := dst.String()
+	return &output, nil
 }
 
 func UnmarshalData[T any](data interface{}, output *T) error {

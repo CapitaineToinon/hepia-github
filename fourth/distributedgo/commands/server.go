@@ -110,24 +110,9 @@ func (s *Server) Start() error {
 
 					copy := msg
 					copy.Source = s.Me.Address
-					var responses [][]byte
-
-					var wg sync.WaitGroup
-					wg.Add(1)
-
-					go func() {
-						responses = s.Broadcast(copy, s.Me.Neighbours)
-						wg.Done()
-					}()
-
+					responses := s.Broadcast(copy, s.Me.Neighbours)
 					response, _ := msg.Reach()
-
-					if msg.WithAcknowledge {
-						// some commands need to wait for the responses of neighbours
-						// and others don't
-						wg.Wait()
-						response, _ = response.Aggregate(responses)
-					}
+					response, _ = response.Aggregate(responses)
 
 					bytes, _ := response.Marshal()
 					c.Write(bytes)
@@ -138,7 +123,6 @@ func (s *Server) Start() error {
 			}
 
 			s.Count++
-
 			if !s.Reach {
 				s.Reach = true
 				s.ParentConn = c
@@ -154,15 +138,12 @@ func (s *Server) Start() error {
 				s.ChildrenResponses = s.Broadcast(copy, to)
 			}
 
-			log.Println("now final send maybe?")
-			log.Printf("count %d len %d\n", s.Count, len(s.Me.Neighbours))
-
 			if s.Count >= len(s.Me.Neighbours) && s.ParentConn != nil {
 				func() {
 					defer s.Reset()
 
 					log.Println("respond to parent")
-					response, err := msg.Reach()
+					response, _ := msg.Reach()
 					response, _ = response.Aggregate(s.ChildrenResponses)
 					bytes, _ := response.Marshal()
 

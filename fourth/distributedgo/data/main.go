@@ -6,16 +6,16 @@ import (
 )
 
 type Transaction struct {
-	Id       int    `json:"id,omitempty"`
-	Sender   string `json:"sender,omitempty"`
-	Receiver string `json:"receiver,omitempty"`
-	Amount   int    `json:"amount,omitempty"`
+	Id       int    `json:"id"`
+	Sender   string `json:"sender"`
+	Receiver string `json:"receiver"`
+	Amount   int    `json:"amount"`
 }
 
 type CreateTransaction struct {
-	Sender   string `json:"sender,omitempty"`
-	Receiver string `json:"receiver,omitempty"`
-	Amount   int    `json:"amount,omitempty"`
+	Sender   string `json:"sender"`
+	Receiver string `json:"receiver"`
+	Amount   int    `json:"amount"`
 }
 
 var id = 0
@@ -42,7 +42,11 @@ func Fake(fake Transaction) (Transaction, error) {
 		return Transaction{}, fmt.Errorf("transaction with id %d not found", fake.Id)
 	}
 
-	Transactions[index] = fake
+	target := &Transactions[index]
+	target.Sender = fake.Sender
+	target.Receiver = fake.Receiver
+	target.Amount = fake.Amount
+
 	return fake, nil
 }
 

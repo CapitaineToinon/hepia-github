@@ -2,7 +2,6 @@ package commands
 
 import (
 	"capitainetoinon/distributed/messages"
-	"fmt"
 )
 
 type CreateCommand struct {
@@ -14,10 +13,9 @@ type CreateCommand struct {
 
 func (c CreateCommand) Execute([]string) error {
 	msg := messages.CommonMessage{
-		Source:          "client",
-		Operiation:      "create",
-		Broadcast:       true,
-		WithAcknowledge: false,
+		Source:     "client",
+		Operiation: "create",
+		Broadcast:  true,
 		Payload: messages.CreateMessage{
 			Sender:   c.Sender,
 			Receiver: c.Receiver,
@@ -25,19 +23,5 @@ func (c CreateCommand) Execute([]string) error {
 		},
 	}
 
-	common, err := msg.Execute(c.Ip, c.Port)
-
-	if err != nil {
-		return err
-	}
-
-	var resp messages.CreateResponse
-	messages.UnmarshalData(common.Data, &resp)
-
-	if err != nil {
-		return err
-	}
-
-	fmt.Println(resp)
-	return nil
+	return msg.Execute(c.Ip, c.Port)
 }

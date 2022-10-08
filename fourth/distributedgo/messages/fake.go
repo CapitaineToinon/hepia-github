@@ -12,7 +12,6 @@ type FakeMessage struct {
 }
 
 type FakeResponse struct {
-	Message  string `json:"message"`
 	Id       int    `json:"id"`
 	Sender   string `json:"sender"`
 	Receiver string `json:"receiver"`
@@ -29,8 +28,9 @@ func (c FakeMessage) Reach() CommonResponse {
 
 	if err != nil {
 		return CommonResponse{
-			Message: err.Error(),
-			Data:    nil,
+			Message:    err.Error(),
+			Operiation: "fake",
+			Data:       nil,
 		}
 	}
 
