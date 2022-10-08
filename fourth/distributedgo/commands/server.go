@@ -68,9 +68,9 @@ func (s *Server) Start() error {
 				return
 			}
 
-			s.ParentConn = c
-
 			if !msg.Broadcast {
+				// simple command that only wants to talk to this
+				// specific node.
 				go func() {
 					defer s.Reset()
 
@@ -106,30 +106,25 @@ func (s *Server) Start() error {
 				func() {
 					defer s.Reset()
 					s.Reach = true
-
-					log.Println("from client")
+					log.Println("reached by a client")
 
 					copy := msg
 					copy.Source = s.Me.Address
-					var wg sync.WaitGroup
 					var responses [][]byte
 
-					for _, n := range s.Me.Neighbours {
-						addr := n.Address
-						wg.Add(1)
-						go func() {
-							log.Printf("sending to %s\n", addr)
-							bytes, _ := json.Marshal(copy)
-							resp, _ := utils.Send(addr, s.Port, bytes)
-							responses = append(responses, resp)
-							wg.Done()
-							log.Printf("received from %s\n", addr)
-						}()
-					}
+					var wg sync.WaitGroup
+					wg.Add(1)
+
+					go func() {
+						responses = s.Broadcast(copy, s.Me.Neighbours)
+						wg.Done()
+					}()
 
 					response, _ := msg.Reach()
 
-					if msg.Broadcast {
+					if msg.WithAcknowledge {
+						// some commands need to wait for the responses of neighbours
+						// and others don't
 						wg.Wait()
 						response, _ = response.Aggregate(responses)
 					}
@@ -147,39 +142,22 @@ func (s *Server) Start() error {
 			if !s.Reach {
 				s.Reach = true
 				s.ParentConn = c
-
-				log.Println("from neighbour")
+				log.Println("reached by a neighbour")
 
 				copy := msg
 				copy.Source = s.Me.Address
-				var wg sync.WaitGroup
 
-				for _, n := range s.Me.Neighbours {
-					addr := n.Address
+				to := utils.Filter(s.Me.Neighbours, func(n yaml.Node) bool {
+					return n.Address != msg.Source
+				})
 
-					if addr == msg.Source {
-						// broadcast to all neighbours except parent
-						continue
-					}
-
-					wg.Add(1)
-					go func() {
-						log.Printf("sending to %s\n", addr)
-						bytes, _ := json.Marshal(copy)
-						resp, _ := utils.Send(addr, s.Port, bytes)
-						s.ChildrenResponses = append(s.ChildrenResponses, resp)
-						wg.Done()
-						log.Printf("received from %s\n", addr)
-					}()
-				}
-
-				wg.Wait()
+				s.ChildrenResponses = s.Broadcast(copy, to)
 			}
 
 			log.Println("now final send maybe?")
 			log.Printf("count %d len %d\n", s.Count, len(s.Me.Neighbours))
 
-			if s.Count >= len(s.Me.Neighbours)-1 && s.ParentConn != nil {
+			if s.Count >= len(s.Me.Neighbours) && s.ParentConn != nil {
 				func() {
 					defer s.Reset()
 
@@ -210,8 +188,37 @@ func (s *Server) Start() error {
 	}
 }
 
-func (s *Server) Broadcast() {
+func (s *Server) Broadcast(msg messages.CommonMessage, to []yaml.Node) (ret [][]byte) {
+	var wg sync.WaitGroup
 
+	for _, n := range s.Me.Neighbours {
+		addr := n.Address
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+
+			log.Printf("broadcasting to %s\n", addr)
+			bytes, err := json.Marshal(msg)
+
+			if err != nil {
+				log.Println(err)
+				return
+			}
+
+			resp, err := utils.Send(addr, s.Port, bytes)
+
+			if err != nil {
+				log.Println(err)
+				return
+			}
+
+			ret = append(ret, resp)
+			log.Printf("broadcast response by %s\n", addr)
+		}()
+	}
+
+	wg.Wait()
+	return ret
 }
 
 func (cmd ServerCommand) Execute([]string) error {
