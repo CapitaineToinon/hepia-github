@@ -13,7 +13,7 @@ type Reachable interface {
 }
 
 type Aggregatable interface {
-	Aggregate([][]byte) CommonResponse
+	Aggregate([]CommonResponse) CommonResponse
 }
 
 type CommonMessage struct {
@@ -89,7 +89,7 @@ func (c CommonMessage) Marshal() ([]byte, error) {
 	return json.Marshal(c)
 }
 
-func (c CommonResponse) Aggregate(responses [][]byte) (*CommonResponse, error) {
+func (c CommonResponse) Aggregate(responses []CommonResponse) (*CommonResponse, error) {
 	var aggregatable Aggregatable
 
 	switch c.Operiation {

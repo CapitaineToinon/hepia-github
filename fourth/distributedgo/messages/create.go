@@ -2,7 +2,6 @@ package messages
 
 import (
 	"capitainetoinon/distributed/data"
-	"encoding/json"
 )
 
 type CreateMessage struct {
@@ -37,18 +36,8 @@ func (c CreateMessage) Reach() CommonResponse {
 	}
 }
 
-func (c CreateResponse) Aggregate(responses [][]byte) CommonResponse {
-	for _, b := range responses {
-		var common CommonResponse
-
-		if err := json.Unmarshal(b, &common); err != nil {
-			return CommonResponse{
-				Message:    err.Error(),
-				Operiation: "create",
-				Data:       nil,
-			}
-		}
-
+func (c CreateResponse) Aggregate(responses []CommonResponse) CommonResponse {
+	for _, common := range responses {
 		// if any of the create failed, fail all of them
 		if !common.Ok() {
 			return CommonResponse{

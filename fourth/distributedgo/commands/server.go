@@ -25,7 +25,7 @@ type Server struct {
 	Me                *yaml.Node
 	Port              string
 	ParentConn        net.Conn
-	ChildrenResponses [][]byte
+	ChildrenResponses []messages.CommonResponse
 	Reach             bool
 	Count             int
 }
@@ -169,7 +169,7 @@ func (s *Server) Start() error {
 	}
 }
 
-func (s *Server) Broadcast(msg messages.CommonMessage, to []yaml.Node) (ret [][]byte) {
+func (s *Server) Broadcast(msg messages.CommonMessage, to []yaml.Node) (ret []messages.CommonResponse) {
 	var wg sync.WaitGroup
 
 	for _, n := range s.Me.Neighbours {
@@ -186,14 +186,20 @@ func (s *Server) Broadcast(msg messages.CommonMessage, to []yaml.Node) (ret [][]
 				return
 			}
 
-			resp, err := utils.Send(addr, s.Port, bytes)
+			bytes, err = utils.Send(addr, s.Port, bytes)
 
 			if err != nil {
 				log.Println(err)
 				return
 			}
 
-			ret = append(ret, resp)
+			var common messages.CommonResponse
+			if err := json.Unmarshal(bytes, &common); err != nil {
+				log.Println(err)
+				return
+			}
+
+			ret = append(ret, common)
 			log.Printf("broadcast response by %s\n", addr)
 		}()
 	}
