@@ -2,14 +2,14 @@ package messages
 
 import (
 	"bytes"
-	"capitainetoinon/distributed/utils"
+	"capitainetoinon/database"
+	"capitainetoinon/utils"
 	"encoding/json"
 	"fmt"
-	"log"
 )
 
 type Reachable interface {
-	Reach() CommonResponse
+	Reach(s *database.Database) CommonResponse
 }
 
 type Aggregatable interface {
@@ -29,7 +29,7 @@ type CommonResponse struct {
 	Data       interface{} `json:"data"`
 }
 
-func (c CommonMessage) Reach() (*CommonResponse, error) {
+func (c CommonMessage) Reach(db *database.Database) (*CommonResponse, error) {
 	var value map[string]interface{}
 	var bytes []byte
 	var err error
@@ -79,14 +79,18 @@ func (c CommonMessage) Reach() (*CommonResponse, error) {
 		return nil, fmt.Errorf("operation not found")
 	}
 
-	log.Printf("Operation of type %s received by %s\n", c.Operiation, c.Source)
-
-	response := message.Reach()
+	response := message.Reach(db)
 	return &response, nil
 }
 
 func (c CommonMessage) Marshal() ([]byte, error) {
 	return json.Marshal(c)
+}
+
+func (c CommonMessage) CopyAs(source string) CommonMessage {
+	copy := c
+	copy.Source = source
+	return copy
 }
 
 func (c CommonResponse) Aggregate(responses []CommonResponse) (*CommonResponse, error) {

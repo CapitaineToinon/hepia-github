@@ -1,12 +1,12 @@
 package commands
 
 import (
-	"capitainetoinon/distributed/messages"
+	"capitainetoinon/messages"
 )
 
 type VoteCommand struct {
 	CommonOptions
-	Id       int    `long:"id" required:"true"`
+	Uuid     string `long:"uuid" required:"true"`
 	Sender   string `long:"sender" required:"true"`
 	Receiver string `long:"receiver" required:"true"`
 	Amount   int    `long:"amount" required:"true"`
@@ -18,7 +18,7 @@ func (c VoteCommand) Execute([]string) error {
 		Operiation: "vote",
 		Broadcast:  true,
 		Payload: messages.VoteMessage{
-			Id:       c.Id,
+			Uuid:     c.Uuid,
 			Sender:   c.Sender,
 			Receiver: c.Receiver,
 			Amount:   c.Amount,

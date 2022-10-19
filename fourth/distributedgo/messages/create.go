@@ -1,34 +1,42 @@
 package messages
 
-import (
-	"capitainetoinon/distributed/data"
-)
+import "capitainetoinon/database"
 
 type CreateMessage struct {
+	Uuid     string `json:"uuid"`
 	Sender   string `json:"sender"`
 	Receiver string `json:"receiver"`
 	Amount   int    `json:"amount"`
 }
 
 type CreateResponse struct {
-	Id       int    `json:"id"`
+	Uuid     string `json:"uuid"`
 	Sender   string `json:"sender"`
 	Receiver string `json:"receiver"`
 	Amount   int    `json:"amount"`
 }
 
-func (c CreateMessage) Reach() CommonResponse {
-	created := data.Create(data.CreateTransaction{
+func (c CreateMessage) Reach(db *database.Database) CommonResponse {
+	created, err := db.Create(database.CreateTransaction{
+		Uuid:     c.Uuid,
 		Sender:   c.Sender,
 		Receiver: c.Receiver,
 		Amount:   c.Amount,
 	})
 
+	if err != nil {
+		return CommonResponse{
+			Message:    err.Error(),
+			Operiation: "fake",
+			Data:       nil,
+		}
+	}
+
 	return CommonResponse{
 		Message:    "ok",
 		Operiation: "create",
 		Data: CreateResponse{
-			Id:       created.Id,
+			Uuid:     created.Uuid,
 			Sender:   created.Sender,
 			Receiver: created.Receiver,
 			Amount:   created.Amount,

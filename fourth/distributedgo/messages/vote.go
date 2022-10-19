@@ -1,11 +1,11 @@
 package messages
 
 import (
-	"capitainetoinon/distributed/data"
+	"capitainetoinon/database"
 )
 
 type VoteMessage struct {
-	Id       int    `json:"id"`
+	Uuid     string `json:"uuid"`
 	Sender   string `json:"sender"`
 	Receiver string `json:"receiver"`
 	Amount   int    `json:"amount"`
@@ -17,19 +17,29 @@ type VoteResponse struct {
 	Rate  int `json:"rate"`
 }
 
-func (c VoteMessage) Reach() CommonResponse {
+func (c VoteMessage) Reach(db *database.Database) CommonResponse {
 	response := VoteResponse{
 		Good:  0,
-		Total: 1,
 		Rate:  0,
+		Total: 1,
 	}
 
-	if data.HasExact(data.Transaction{
-		Id:       c.Id,
+	exists, err := db.Exists(database.Transaction{
+		Uuid:     c.Uuid,
 		Sender:   c.Sender,
 		Receiver: c.Receiver,
 		Amount:   c.Amount,
-	}) {
+	})
+
+	if err != nil {
+		return CommonResponse{
+			Message:    err.Error(),
+			Operiation: "vote",
+			Data:       nil,
+		}
+	}
+
+	if exists {
 		response.Good = 1
 		response.Rate = 100
 	}
@@ -43,6 +53,15 @@ func (c VoteMessage) Reach() CommonResponse {
 
 func (c VoteResponse) Aggregate(responses []CommonResponse) CommonResponse {
 	for _, common := range responses {
+		// if any of the vote failed, fail all of them
+		if !common.Ok() {
+			return CommonResponse{
+				Message:    common.Message,
+				Operiation: "create",
+				Data:       nil,
+			}
+		}
+
 		var resp VoteResponse
 		err := UnmarshalData(common.Data, &resp)
 

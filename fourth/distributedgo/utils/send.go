@@ -3,6 +3,7 @@ package utils
 import (
 	"bytes"
 	"fmt"
+	"io"
 	"net"
 )
 
@@ -19,12 +20,13 @@ func Send(ip string, port string, message []byte) ([]byte, error) {
 		return nil, err
 	}
 
-	reply := make([]byte, 4096)
-	_, err = con.Read(reply)
+	defer con.Close()
 
-	if err != nil {
+	var buf bytes.Buffer
+
+	if _, err := io.Copy(&buf, con); err != nil {
 		return nil, err
 	}
 
-	return bytes.Trim(reply, "\x00"), nil
+	return bytes.Trim(buf.Bytes(), "\x00"), nil
 }

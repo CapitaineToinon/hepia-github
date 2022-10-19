@@ -9,19 +9,21 @@ import (
 
 type Node struct {
 	Id         int    `yaml:"id"`
+	Port       string `yaml:"port"`
 	Address    string `yaml:"address"`
 	Neighbours []Node `yaml:"neighbours"`
 }
 
 func Parse(filename string) (*Node, error) {
 	buf, err := ioutil.ReadFile(filename)
+
 	if err != nil {
 		return nil, err
 	}
 
 	n := &Node{}
-
 	err = yaml.Unmarshal(buf, n)
+
 	if err != nil {
 		return nil, fmt.Errorf("in file %q: %w", filename, err)
 	}

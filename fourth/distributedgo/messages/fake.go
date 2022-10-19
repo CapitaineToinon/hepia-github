@@ -1,26 +1,24 @@
 package messages
 
-import (
-	"capitainetoinon/distributed/data"
-)
+import "capitainetoinon/database"
 
 type FakeMessage struct {
-	Id       int    `json:"id"`
+	Uuid     string `json:"uuid"`
 	Sender   string `json:"sender"`
 	Receiver string `json:"receiver"`
 	Amount   int    `json:"amount"`
 }
 
 type FakeResponse struct {
-	Id       int    `json:"id"`
+	Uuid     string `json:"uuid"`
 	Sender   string `json:"sender"`
 	Receiver string `json:"receiver"`
 	Amount   int    `json:"amount"`
 }
 
-func (c FakeMessage) Reach() CommonResponse {
-	faked, err := data.Fake(data.Transaction{
-		Id:       c.Id,
+func (c FakeMessage) Reach(db *database.Database) CommonResponse {
+	faked, err := db.Fake(database.Transaction{
+		Uuid:     c.Uuid,
 		Sender:   c.Sender,
 		Receiver: c.Receiver,
 		Amount:   c.Amount,
@@ -38,7 +36,7 @@ func (c FakeMessage) Reach() CommonResponse {
 		Message:    "ok",
 		Operiation: "fake",
 		Data: FakeResponse{
-			Id:       faked.Id,
+			Uuid:     faked.Uuid,
 			Sender:   faked.Sender,
 			Receiver: faked.Receiver,
 			Amount:   faked.Amount,

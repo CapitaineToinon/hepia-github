@@ -1,7 +1,7 @@
 package commands
 
 import (
-	"capitainetoinon/distributed/messages"
+	"capitainetoinon/messages"
 )
 
 type GetCommand struct {

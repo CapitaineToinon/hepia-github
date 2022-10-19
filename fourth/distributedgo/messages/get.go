@@ -1,22 +1,32 @@
 package messages
 
 import (
-	"capitainetoinon/distributed/data"
+	"capitainetoinon/database"
 )
 
 type GetMessage struct {
 }
 
 type GetResponse struct {
-	Transactions []data.Transaction `json:"transactions"`
+	Transactions []string `json:"transactions"`
 }
 
-func (c GetMessage) Reach() CommonResponse {
+func (c GetMessage) Reach(db *database.Database) CommonResponse {
+	transactions, err := db.List()
+
+	if err != nil {
+		return CommonResponse{
+			Message:    err.Error(),
+			Operiation: "fake",
+			Data:       nil,
+		}
+	}
+
 	return CommonResponse{
 		Message:    "ok",
 		Operiation: "get",
 		Data: GetResponse{
-			Transactions: data.Transactions,
+			Transactions: *transactions,
 		},
 	}
 }

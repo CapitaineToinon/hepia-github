@@ -1,7 +1,9 @@
 package commands
 
 import (
-	"capitainetoinon/distributed/messages"
+	"capitainetoinon/messages"
+
+	"github.com/google/uuid"
 )
 
 type CreateCommand struct {
@@ -17,6 +19,7 @@ func (c CreateCommand) Execute([]string) error {
 		Operiation: "create",
 		Broadcast:  true,
 		Payload: messages.CreateMessage{
+			Uuid:     uuid.NewString(),
 			Sender:   c.Sender,
 			Receiver: c.Receiver,
 			Amount:   c.Amount,

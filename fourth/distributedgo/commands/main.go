@@ -6,6 +6,7 @@ type CommonOptions struct {
 }
 
 var Options struct {
-	Server ServerCommand `command:"server"`
-	Client ClientCommand `command:"client"`
+	Server  ServerCommand  `command:"server"`
+	Servers ServersCommand `command:"servers"`
+	Client  ClientCommand  `command:"client"`
 }

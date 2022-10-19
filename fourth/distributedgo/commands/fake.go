@@ -1,12 +1,12 @@
 package commands
 
 import (
-	"capitainetoinon/distributed/messages"
+	"capitainetoinon/messages"
 )
 
 type FakeCommand struct {
 	CommonOptions
-	Id       int    `long:"id" required:"true"`
+	Uuid     string `long:"uuid" required:"true"`
 	Sender   string `long:"sender" required:"true"`
 	Receiver string `long:"receiver" required:"true"`
 	Amount   int    `long:"amount" required:"true"`
@@ -18,7 +18,7 @@ func (c FakeCommand) Execute([]string) error {
 		Operiation: "fake",
 		Broadcast:  false,
 		Payload: messages.FakeMessage{
-			Id:       c.Id,
+			Uuid:     c.Uuid,
 			Sender:   c.Sender,
 			Receiver: c.Receiver,
 			Amount:   c.Amount,
