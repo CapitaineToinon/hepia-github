@@ -57,7 +57,7 @@ func (c VoteResponse) Aggregate(responses []CommonResponse) CommonResponse {
 		if !common.Ok() {
 			return CommonResponse{
 				Message:    common.Message,
-				Operiation: "create",
+				Operiation: "vote",
 				Data:       nil,
 			}
 		}
