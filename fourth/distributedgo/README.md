@@ -4,6 +4,12 @@ Setup for MACOS
 sudo ifconfig lo0 alias 127.0.0.* up
 ```
 
+# How to setup
+
+- Copy `.env.example` to `.env`
+- Ensure you're logged in to your google cloud storage account
+- set the `GOOGLE_PROJECT` env variable to match your google project name
+
 # Commands
 
 ## main
@@ -21,6 +27,7 @@ Available commands:
 ```
 
 ## server
+
 ```
 Usage:
   main [OPTIONS] server [server-OPTIONS]
@@ -50,6 +57,7 @@ Available commands:
 ```
 
 ## client create
+
 ```
 Usage:
   main [OPTIONS] client create [create-OPTIONS]
@@ -66,6 +74,7 @@ Help Options:
 ```
 
 ## client vote
+
 ```
 Usage:
   main [OPTIONS] client vote [vote-OPTIONS]
@@ -83,6 +92,7 @@ Help Options:
 ```
 
 ## client fake
+
 ```
 Usage:
   main [OPTIONS] client fake [fake-OPTIONS]
@@ -100,6 +110,7 @@ Help Options:
 ```
 
 ## client get
+
 ```
 Usage:
   main [OPTIONS] client get [get-OPTIONS]
