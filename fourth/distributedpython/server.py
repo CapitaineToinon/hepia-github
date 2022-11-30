@@ -63,11 +63,11 @@ class Server(object):
     config: Config
     dist: dict[str, int] = {}
     first: dict[str, tuple[str, int]] = {}
-    n: int = 3
 
     lock: Lock = Lock()
     count: int = 0
     messages: dict[str, dict] = {}
+    done: set[str] = set()
 
     @staticmethod
     def from_path(path: str) -> 'Server':
@@ -122,13 +122,16 @@ class Server(object):
         with self.lock:
             self.count += 1
 
-            # save messages for later
-            self.messages[neighbour.address] = message
+            if "stop" in message:
+                # one of our neighbour is done
+                self.done.add(neighbour.address)
+            else:
+                # otherwise save its message for later
+                self.messages[neighbour.address] = message
 
-            # got all messages for current t
+            # all our neighbours answered us with either message or stop
             if self.count == len(self.config.neighbours):
                 next_nodes: set[str] = set()
-
                 for (address, message) in self.messages.items():
                     for node in message["nodes"]:
                         # we found a better match!
@@ -141,8 +144,11 @@ class Server(object):
                             self.first[node] = address
                             next_nodes.add(node)
 
-                # exit condition, we're done!
-                if message["dist"] >= self.n - 1:
+                if len(next_nodes) == 0:
+                    self.broadcast_all({
+                        "stop": True,
+                    })
+
                     print("DONE")
                     print("dist", self.dist)
                     print("first", self.first)
@@ -151,7 +157,7 @@ class Server(object):
                 # otherwise keep going broadcast
                 next = {
                     "dist": message["dist"] + 1,
-                    "nodes": next_nodes
+                    "nodes": [*next_nodes]
                 }
 
                 print("NEXT", next)
@@ -174,7 +180,7 @@ class Server(object):
         threads = [Thread(target=self.broadcast_to,
                           name="broadcast_to",
                           args=(neighbour, message,))
-                   for neighbour in self.config.neighbours]
+                   for neighbour in self.config.neighbours if neighbour not in self.done]
 
         for t in threads:
             t.start()
@@ -198,7 +204,6 @@ if __name__ == "__main__":
 
     # parser.add_argument('port')
     parser.add_argument('config')
-    parser.add_argument('-n', '--nodes')
     args = parser.parse_args()
 
     server = Server.from_path(args.config)
