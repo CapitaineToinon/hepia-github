@@ -60,6 +60,7 @@ class Config:
 
 
 class Server(object):
+    ready: bool = False
     config: Config
     dist: dict[str, int] = {}
     first: dict[str, tuple[str, int]] = {}
@@ -89,11 +90,12 @@ class Server(object):
                 s.listen()
                 print(f"listening on {self.config.address}:{PORT}")
 
-                while True:
+                while not self.ready:
                     conn, addr = s.accept()
                     t = Thread(target=self.handler, args=(
                         conn, addr), name="handler")
                     t.start()
+                    t.join()
             except KeyboardInterrupt:
                 s.close()
 
@@ -145,6 +147,7 @@ class Server(object):
                             next_nodes.add(node)
 
                 if len(next_nodes) == 0:
+                    self.ready = True
                     self.broadcast_all({
                         "stop": True,
                     })
@@ -180,7 +183,8 @@ class Server(object):
         threads = [Thread(target=self.broadcast_to,
                           name="broadcast_to",
                           args=(neighbour, message,))
-                   for neighbour in self.config.neighbours if neighbour not in self.done]
+                   for neighbour in self.config.neighbours
+                   if neighbour.address not in self.done]
 
         for t in threads:
             t.start()
