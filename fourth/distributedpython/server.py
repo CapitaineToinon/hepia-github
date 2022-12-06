@@ -47,24 +47,20 @@ class Server(object):
 
                 while not self.ready:
                     conn, addr = s.accept()
-                    t = Thread(target=self.handler, args=(
-                        conn, addr), name="handler")
-                    t.start()
-                    t.join()
+                    self.handler(conn, addr)
+
+                # wait before stopping
+                sleep(5)
             except KeyboardInterrupt:
                 s.close()
-
-        t.join()
 
     def handler(self, conn: socket.socket, addr: tuple[str, int]) -> None:
         """
         Main handler that processes messages recieved on the socket
         """
         is_neighbour = self.config.is_neighbour(addr)
-        who = 'neighbour' if is_neighbour else 'client'
+
         with conn:
-            address, _ = addr
-            print(f"Connected by {who} ({address})")
             data = conn.recv(4096)  # TODO while True for more?
 
             if is_neighbour:
@@ -75,16 +71,18 @@ class Server(object):
                 print("TODO handle client messages")
 
     def on_message(self, neighbour: Config, message: dict):
-        print(f"Message from {neighbour.address} is {message}")
+        print(f"Connected by {neighbour.address}: {message}")
 
         if self.mode == Mode.wait and not self.initialized:
             self.init_broadcast(delay=0)
+            sleep(5)
 
         with self.lock:
             self.count += 1
 
             if "stop" in message:
                 # one of our neighbour is done
+                print(f"neighbour {neighbour.address} is done")
                 self.done.add(neighbour.address)
             else:
                 # otherwise save its message for later
@@ -92,12 +90,16 @@ class Server(object):
 
             # all our neighbours answered us with either message or stop
             if self.count == len(self.config.neighbours):
+                # reset for next step
+                self.count = 0
+
+                print("Received all messages...")
                 next_nodes: set[str] = set()
                 for (address, message) in self.messages.items():
                     for node in message["nodes"]:
+                        d = (message["dist"] + 1)
                         # we found a better match!
-                        if node not in self.dist or self.dist[node] > message["dist"]:
-                            d = (message["dist"] + 1)
+                        if node not in self.dist or self.dist[node] > d:
                             current_d = self.dist[node] if node in self.dist else 'None'
                             print(
                                 f"address {node} current is {current_d} but will now be {d}")
@@ -105,7 +107,12 @@ class Server(object):
                             self.first[node] = address
                             next_nodes.add(node)
 
+                # reset for next step
+                self.messages.clear()
+
                 if len(next_nodes) == 0:
+                    print("READY")
+
                     self.ready = True
                     self.broadcast_all({
                         "stop": True,
@@ -120,14 +127,12 @@ class Server(object):
                     "nodes": [*next_nodes]
                 }
 
-                print("NEXT", next)
-
+                # We need to sleep before sending the next one
                 if message["dist"] == 0:
                     sleep(5)
 
+                print("NEXT", next)
                 self.broadcast_all(next)
-                self.count = 0
-                self.messages.clear()
 
     def init_broadcast(self, delay: int = 10):
         self.initialized = True
@@ -144,25 +149,32 @@ class Server(object):
         t.start()
 
     def broadcast_all(self, message: dict):
-        print("broadcasting t0 to neighbours now")
+        to = [neighbour for neighbour in self.config.neighbours
+              if neighbour.address not in self.done]
+
+        print(f"broadcasting to {[n.address for n in to]}")
+
+        if len(to) == 0:
+            return
+
         threads = [Thread(target=self.broadcast_to,
                           name="broadcast_to",
                           args=(neighbour, message,))
-                   for neighbour in self.config.neighbours
-                   if neighbour.address not in self.done]
+                   for neighbour in to]
 
         for t in threads:
             t.start()
 
-        for t in threads:
-            t.join()
-
     def broadcast_to(self, to: Config,  message: dict):
-        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-            s.bind((self.config.address, 0))
-            s.connect((to.address, self.port))
-            bytes = pickle.dumps(message)
-            s.send(bytes)
+        bytes = pickle.dumps(message)
+
+        try:
+            with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                s.bind((self.config.address, 0))
+                s.connect((to.address, self.port))
+                s.send(bytes)
+        except ConnectionRefusedError:
+            print(f"ConnectionRefusedError {to.address}:{self.port}")
 
     def print_state(self):
         print("Table of distances:")

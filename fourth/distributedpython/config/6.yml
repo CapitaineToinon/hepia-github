@@ -1,0 +1,9 @@
+id: 6
+address: "127.0.0.6"
+neighbours:
+  - id: 3
+    address: "127.0.0.3"
+  - id: 5
+    address: "127.0.0.5"
+  - id: 8
+    address: "127.0.0.8"
