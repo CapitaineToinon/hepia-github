@@ -3,29 +3,16 @@ import socket
 import argparse
 import pickle
 from threading import Thread, Lock
-from functools import reduce
 from time import sleep
+from enum import Enum
 
-PORT: int = 65432
 
+class Mode(Enum):
+    init: str = "INIT"
+    wait: str = "WAIT"
 
-class Message:
-    dist: int
-    nodes: list[str]
-
-    @staticmethod
-    def new(dist: int, nodes: list[str]) -> 'Message':
-        m = Message
-        m.dist = dist
-        m.nodes = nodes
-        return m
-
-    @staticmethod
-    def loads(bytes: bytes) -> 'Message':
-        return pickle.loads(bytes)
-
-    def dumps(self) -> str:
-        return pickle.dumps(self)
+    def __str__(self):
+        return self.value
 
 
 class Config:
@@ -60,8 +47,11 @@ class Config:
 
 
 class Server(object):
-    ready: bool = False
+    port: int
     config: Config
+    mode: Mode
+    initialized: bool = False
+    ready: bool = False
     dist: dict[str, int] = {}
     first: dict[str, tuple[str, int]] = {}
 
@@ -71,24 +61,29 @@ class Server(object):
     done: set[str] = set()
 
     @staticmethod
-    def from_path(path: str) -> 'Server':
+    def from_args(port: int, path: str, mode: Mode) -> 'Server':
         config = Config.from_path(path)
-        return Server(config)
+        return Server(port, config, mode)
 
-    def __init__(self, config: Config) -> None:
+    def __init__(self, port: int, config: Config, mode: Mode) -> None:
+        self.port = port
         self.config = config
+        self.mode = mode
         self.dist[self.config.address] = 0
         self.first[self.config.address] = self.config.address
 
     def start(self) -> None:
-        t = Thread(target=self.init_broadcast, name="init_broadcast")
-        t.start()
+        if self.mode == Mode.init:
+            print(f"Started in init mode")
+            self.init_broadcast(delay=5)
+        else:
+            print(f"Started in wait mode")
 
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             try:
-                s.bind((self.config.address, PORT))
+                s.bind((self.config.address, self.port))
                 s.listen()
-                print(f"listening on {self.config.address}:{PORT}")
+                print(f"listening on {self.config.address}:{self.port}")
 
                 while not self.ready:
                     conn, addr = s.accept()
@@ -121,6 +116,10 @@ class Server(object):
 
     def on_message(self, neighbour: Config, message: dict):
         print(f"Message from {neighbour.address} is {message}")
+
+        if self.mode == Mode.wait and not self.initialized:
+            self.init_broadcast(delay=0)
+
         with self.lock:
             self.count += 1
 
@@ -173,13 +172,21 @@ class Server(object):
                 self.messages.clear()
 
     def init_broadcast(self, delay: int = 10):
-        sleep(delay)
-        self.broadcast_all({
-            "dist": 0,
-            "nodes": [self.config.address]
-        })
+        self.initialized = True
+
+        def run():
+            print(f"broadcasting t0 to neighbours in {delay}s")
+            sleep(delay)
+            self.broadcast_all({
+                "dist": 0,
+                "nodes": [self.config.address]
+            })
+
+        t = Thread(target=run, name="init_broadcast_run")
+        t.start()
 
     def broadcast_all(self, message: dict):
+        print("broadcasting t0 to neighbours now")
         threads = [Thread(target=self.broadcast_to,
                           name="broadcast_to",
                           args=(neighbour, message,))
@@ -195,7 +202,7 @@ class Server(object):
     def broadcast_to(self, to: Config,  message: dict):
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
             s.bind((self.config.address, 0))
-            s.connect((to.address, PORT))
+            s.connect((to.address, self.port))
             bytes = pickle.dumps(message)
             s.send(bytes)
 
@@ -206,9 +213,10 @@ if __name__ == "__main__":
         description='What the program does',
         epilog='Text at the bottom of help')
 
-    # parser.add_argument('port')
-    parser.add_argument('config')
+    parser.add_argument('port', type=int)
+    parser.add_argument('config', type=str)
+    parser.add_argument('mode', type=Mode, choices=list(Mode))
     args = parser.parse_args()
 
-    server = Server.from_path(args.config)
+    server = Server.from_args(args.port, args.config, args.mode)
     server.start()
