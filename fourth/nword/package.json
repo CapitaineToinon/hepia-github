@@ -1,0 +1,12 @@
+{
+  "scripts": {
+    "create": "zx create.mjs",
+    "remove": "zx remove.mjs",
+    "tailscale": "/Applications/Tailscale.app/Contents/MacOS/Tailscale",
+    "up": "npm run tailscale -- up --login-server https://tailscale.hepiapp.ch",
+    "down": "npm run tailscale -- down"
+  },
+  "dependencies": {
+    "zx": "^7.1.1"
+  }
+}
