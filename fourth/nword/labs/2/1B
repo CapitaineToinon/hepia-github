@@ -1,0 +1,8 @@
+#!/bin/bash
+
+ssh H1 ping -c 4 1.1.1.1
+ssh H1 ping -c 4 10.0.0.2
+ssh H1 traceroute -n 1.1.1.1
+
+ssh R1 ping -c 4 1.1.1.1
+ssh R1 ping -c 4 10.0.0.1
