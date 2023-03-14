@@ -15,8 +15,8 @@ if (!project_name) {
 
 const project = await get_project(project_name);
 
-echo(`ensuring ~/.ssh/config.d exists`);
-await fs.mkdirp("~/.ssh/config.d");
+echo(`ensuring ${CONFIG_D} exists`);
+await fs.mkdirp(CONFIG_D);
 
 echo(`ensuring ${GNS3_KEY} exists`);
 await $`chmod 400 gns3.rsa`;
