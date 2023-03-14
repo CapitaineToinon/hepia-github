@@ -14,7 +14,7 @@
     "tailscale": "/Applications/Tailscale.app/Contents/MacOS/Tailscale",
     "up": "npm run tailscale -- up --login-server https://tailscale.hepiapp.ch",
     "down": "npm run tailscale -- down",
-    "pdf": "npx md-to-pdf docs/**/*.md"
+    "pdf": "npx md-to-pdf labs/**/*.md"
   },
   "dependencies": {
     "zx": "^7.1.1"
