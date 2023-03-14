@@ -482,3 +482,285 @@ Et maintenant, dès que je ping H2 depuis H1, j'ai un flooding:
 On peut voir que maintenant, avec un ageing time de 0 secondes, le ping provoque un flooding à chaque fois.
 
 ![ping_3](images/hub.png)
+
+# E - Subdivision du domaine de broadcast
+
+La première étape est d'ajouter une connexion entre `S1` et `S2` via `eth3`:
+
+![eth3](images/eth3.png)
+
+Ensuite nous pouvons configurer `br0` et `br1` sur `S1` et `S2`.
+
+```bash
+#!/bin/bash
+
+ssh S1 ip link set dev br0 down
+ssh S1 ip link delete br0 type bridge
+
+ssh S1 ip link add br0 type bridge
+ssh S1 ip link set dev eth0 master br0
+ssh S1 ip link set dev eth1 master br0
+
+ssh S1 ip link add br1 type bridge
+ssh S1 ip link set dev eth2 master br1
+ssh S1 ip link set dev eth3 master br1
+
+ssh S1 ip link set dev br0 up
+ssh S1 ip link set dev br1 up
+
+ssh S2 ip link set dev br0 down
+ssh S2 ip link delete br0 type bridge
+
+ssh S2 ip link add br0 type bridge
+ssh S2 ip link set dev eth0 master br0
+ssh S2 ip link set dev eth1 master br0
+
+ssh S2 ip link add br1 type bridge
+ssh S2 ip link set dev eth2 master br1
+ssh S2 ip link set dev eth3 master br1
+
+ssh S2 ip link set dev br0 up
+ssh S2 ip link set dev br1 up
+```
+
+Et maintenant, H1 peut ping H2:
+
+```
+➜  ~ ssh H1 ping -c 1 192.168.0.2
+Warning: Permanently added '[100.64.0.8]:2031' (ED25519) to the list of known hosts.
+PING 192.168.0.2 (192.168.0.2) 56(84) bytes of data.
+64 bytes from 192.168.0.2: icmp_seq=1 ttl=64 time=1.66 ms
+
+--- 192.168.0.2 ping statistics ---
+1 packets transmitted, 1 received, 0% packet loss, time 0ms
+rtt min/avg/max/mdev = 1.664/1.664/1.664/0.000 ms
+```
+
+Mais H1 ne peut pas ping H3 ou H4:
+
+```
+➜  ~ ssh H1 ping -c 1 192.168.0.3
+Warning: Permanently added '[100.64.0.8]:2031' (ED25519) to the list of known hosts.
+PING 192.168.0.3 (192.168.0.3) 56(84) bytes of data.
+From 192.168.0.1 icmp_seq=1 Destination Host Unreachable
+
+--- 192.168.0.3 ping statistics ---
+1 packets transmitted, 0 received, +1 errors, 100% packet loss, time 0ms
+
+➜  ~ ssh H1 ping -c 1 192.168.0.4
+Warning: Permanently added '[100.64.0.8]:2031' (ED25519) to the list of known hosts.
+PING 192.168.0.4 (192.168.0.4) 56(84) bytes of data.
+
+--- 192.168.0.4 ping statistics ---
+1 packets transmitted, 0 received, 100% packet loss, time 0ms
+```
+
+Ceci est dû au fait que les paquets sont envoyés sur le réseau via `br0` et `br1` et que les paquets ne sont pas routés entre les deux bridges.
+
+## Nos deux domaines de broadcast offrent-ils la même fonctionnalité qu’un VLAN ? quelle est la différence de fonctionnement entre un switch virtuel et un VLAN ? Expliquez.
+
+Non, les deux domaines de broadcast ne sont pas équivalent à un VLAN.
+
+# F - Routage IPv4
+
+La première étape est de reconfigurer les IP des hosts afin qu'ils soient dans deux réseaux différents, un en `192.168.0.0/24` et un en `192.168.1.0/24`:
+
+```bash
+ssh H1 ip address add 192.168.0.1/24 dev eth0
+ssh H1 ip link set eth0 addr 00:00:00:00:00:1
+ssh H1 ip link set dev eth0 up
+
+ssh H2 ip address add 192.168.0.2/24 dev eth0
+ssh H2 ip link set eth0 addr 00:00:00:00:00:2
+ssh H2 ip link set dev eth0 up
+
+ssh H3 ip address add 192.168.1.3/24 dev eth0
+ssh H3 ip link set eth0 addr 00:00:00:00:00:3
+ssh H3 ip link set dev eth0 up
+
+ssh H4 ip address add 192.168.1.4/24 dev eth0
+ssh H4 ip link set eth0 addr 00:00:00:00:00:4
+ssh H4 ip link set dev eth0 up
+```
+
+Ensuite nous devons configurer `br0` et `br1` sur `S1` et `S2` et leurs assigner des IP respectives. A note qu'il faut en premier ajouter une connexion suplémentaire en `S1` et `S2` via le port `eth3` afin d'avoir la topologie suivante:
+
+![eth3](images/eth3.png)
+
+Ainsi, les bridges `br0` et `br1` peuvent avoir chacun leur propre IP.
+
+```bash
+echo "S1"
+ssh S1 ip link set dev br0 down
+ssh S1 ip link delete br0 type bridge
+
+ssh S1 ip link add br0 type bridge
+ssh S1 ip link set dev eth2 master br0
+ssh S1 ip link set dev eth3 master br0
+
+ssh S1 ip link add br1 type bridge
+ssh S1 ip link set dev eth0 master br1
+ssh S1 ip link set dev eth1 master br1
+
+ssh S1 ip link set dev br0 up
+ssh S1 ip link set dev br1 up
+
+echo "S2"
+ssh S2 ip link set dev br0 down
+ssh S2 ip link delete br0 type bridge
+
+ssh S2 ip link add br0 type bridge
+ssh S2 ip link set dev eth2 master br0
+ssh S2 ip link set dev eth3 master br0
+
+ssh S2 ip link add br1 type bridge
+ssh S2 ip link set dev eth0 master br1
+ssh S2 ip link set dev eth1 master br1
+
+ssh S2 ip link set dev br0 up
+ssh S2 ip link set dev br1 up
+
+echo "adding ip addresses to bridges"
+ssh S1 ip address add 192.168.0.10/24 dev br0
+ssh S1 ip link set br0 addr 00:00:00:00:00:10
+ssh S1 ip link set dev br0 up
+
+ssh S1 ip address add 192.168.1.10/24 dev br1
+ssh S1 ip link set br1 addr 00:00:00:00:00:11
+ssh S1 ip link set dev br1 up
+
+ssh S2 ip address add 192.168.0.20/24 dev br0
+ssh S2 ip link set br0 addr 00:00:00:00:00:20
+ssh S2 ip link set dev br0 up
+
+ssh S2 ip address add 192.168.1.20/24 dev br1
+ssh S2 ip link set br1 addr 00:00:00:00:00:21
+ssh S2 ip link set dev br1 up
+```
+
+Nous avons également besoin d'activer le forwarding sur les deux switches:
+
+```bash
+echo "enabling ipv4 forwarding"
+ssh S1 sysctl net.ipv4.ip_forward=1
+ssh S2 sysctl net.ipv4.ip_forward=1
+```
+
+Finalement, nous ajoutons les routes sur chaque host pour utiliser les bridges comment defaut gateway:
+
+```bash
+echo "adding routes"
+ssh H1 ip route add default via 192.168.0.10 dev eth0
+ssh H2 ip route add default via 192.168.0.20 dev eth0
+ssh H3 ip route add default via 192.168.1.10 dev eth0
+ssh H4 ip route add default via 192.168.1.20 dev eth0
+```
+
+Ainsi, tout le monde peut se ping:
+
+```
+➜  ssh H1 ping -c 1 192.168.0.2
+Warning: Permanently added '[100.64.0.8]:2031' (ED25519) to the list of known hosts.
+PING 192.168.0.2 (192.168.0.2) 56(84) bytes of data.
+64 bytes from 192.168.0.2: icmp_seq=1 ttl=64 time=6.14 ms
+
+--- 192.168.0.2 ping statistics ---
+1 packets transmitted, 1 received, 0% packet loss, time 0ms
+rtt min/avg/max/mdev = 6.143/6.143/6.143/0.000 ms
+➜  ssh H1 ping -c 1 192.168.1.3
+Warning: Permanently added '[100.64.0.8]:2031' (ED25519) to the list of known hosts.
+PING 192.168.1.3 (192.168.1.3) 56(84) bytes of data.
+64 bytes from 192.168.1.3: icmp_seq=1 ttl=63 time=2.20 ms
+
+--- 192.168.1.3 ping statistics ---
+1 packets transmitted, 1 received, 0% packet loss, time 0ms
+rtt min/avg/max/mdev = 2.203/2.203/2.203/0.000 ms
+➜  ssh H1 ping -c 1 192.168.1.4
+Warning: Permanently added '[100.64.0.8]:2031' (ED25519) to the list of known hosts.
+PING 192.168.1.4 (192.168.1.4) 56(84) bytes of data.
+64 bytes from 192.168.1.4: icmp_seq=1 ttl=63 time=7.14 ms
+
+--- 192.168.1.4 ping statistics ---
+1 packets transmitted, 1 received, 0% packet loss, time 0ms
+rtt min/avg/max/mdev = 7.142/7.142/7.142/0.000 ms
+```
+
+Fichier bash complet:
+
+```bash
+#!/bin/bash
+
+echo "adding ip addresses"
+ssh H1 ip address add 192.168.0.1/24 dev eth0
+ssh H1 ip link set eth0 addr 00:00:00:00:00:1
+ssh H1 ip link set dev eth0 up
+
+ssh H2 ip address add 192.168.0.2/24 dev eth0
+ssh H2 ip link set eth0 addr 00:00:00:00:00:2
+ssh H2 ip link set dev eth0 up
+
+ssh H3 ip address add 192.168.1.3/24 dev eth0
+ssh H3 ip link set eth0 addr 00:00:00:00:00:3
+ssh H3 ip link set dev eth0 up
+
+ssh H4 ip address add 192.168.1.4/24 dev eth0
+ssh H4 ip link set eth0 addr 00:00:00:00:00:4
+ssh H4 ip link set dev eth0 up
+
+echo "S1"
+ssh S1 ip link set dev br0 down
+ssh S1 ip link delete br0 type bridge
+
+ssh S1 ip link add br0 type bridge
+ssh S1 ip link set dev eth2 master br0
+ssh S1 ip link set dev eth3 master br0
+
+ssh S1 ip link add br1 type bridge
+ssh S1 ip link set dev eth0 master br1
+ssh S1 ip link set dev eth1 master br1
+
+ssh S1 ip link set dev br0 up
+ssh S1 ip link set dev br1 up
+
+echo "S2"
+ssh S2 ip link set dev br0 down
+ssh S2 ip link delete br0 type bridge
+
+ssh S2 ip link add br0 type bridge
+ssh S2 ip link set dev eth2 master br0
+ssh S2 ip link set dev eth3 master br0
+
+ssh S2 ip link add br1 type bridge
+ssh S2 ip link set dev eth0 master br1
+ssh S2 ip link set dev eth1 master br1
+
+ssh S2 ip link set dev br0 up
+ssh S2 ip link set dev br1 up
+
+echo "adding ip addresses to bridges"
+ssh S1 ip address add 192.168.0.10/24 dev br0
+ssh S1 ip link set br0 addr 00:00:00:00:00:10
+ssh S1 ip link set dev br0 up
+
+ssh S1 ip address add 192.168.1.10/24 dev br1
+ssh S1 ip link set br1 addr 00:00:00:00:00:11
+ssh S1 ip link set dev br1 up
+
+ssh S2 ip address add 192.168.0.20/24 dev br0
+ssh S2 ip link set br0 addr 00:00:00:00:00:20
+ssh S2 ip link set dev br0 up
+
+ssh S2 ip address add 192.168.1.20/24 dev br1
+ssh S2 ip link set br1 addr 00:00:00:00:00:21
+ssh S2 ip link set dev br1 up
+
+echo "enabling ipv4 forwarding"
+ssh S1 sysctl net.ipv4.ip_forward=1
+ssh S2 sysctl net.ipv4.ip_forward=1
+
+echo "adding routes"
+ssh H1 ip route add default via 192.168.0.10 dev eth0
+ssh H2 ip route add default via 192.168.0.20 dev eth0
+ssh H3 ip route add default via 192.168.1.10 dev eth0
+ssh H4 ip route add default via 192.168.1.20 dev eth0
+```
