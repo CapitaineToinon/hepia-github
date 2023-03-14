@@ -12,11 +12,12 @@
     "generate_hostnames": "zx ./scripts/generate_hostnames.mjs",
     "generate_ipv4": "zx ./scripts/generate_ipv4.mjs",
     "tailscale": "/Applications/Tailscale.app/Contents/MacOS/Tailscale",
-    "up": "npm run tailscale -- up --login-server https://tailscale.hepiapp.ch",
-    "down": "npm run tailscale -- down",
-    "pdf": "npx md-to-pdf labs/**/*.md"
+    "up": "pnpm run tailscale -- up --login-server https://tailscale.hepiapp.ch",
+    "down": "pnpm run tailscale -- down",
+    "pdf": "md-to-pdf labs/**/*.md"
   },
   "dependencies": {
+    "md-to-pdf": "^5.2.3",
     "zx": "^7.1.1"
   }
 }
