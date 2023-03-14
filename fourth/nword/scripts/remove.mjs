@@ -1,7 +1,7 @@
 #!/usr/bin/env zx
 
 import "zx/globals";
-import { CONFIG_D, GNS3_KEY } from "./constants.mjs";
+import { CONFIG_D, GNS3_KEY } from "../constants.mjs";
 
 async function removeKey() {
   const need = await fs.pathExists(GNS3_KEY);

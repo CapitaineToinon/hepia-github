@@ -1,10 +1,20 @@
 {
   "scripts": {
-    "create": "zx create.mjs",
-    "remove": "zx remove.mjs",
+    "create": "zx ./scripts/create.mjs",
+    "remove": "zx ./scripts/remove.mjs",
+    "list_files": "zx ./scripts/list_files.mjs",
+    "list_projects": "zx ./scripts/list_projects.mjs",
+    "close_all": "zx ./scripts/close_all.mjs",
+    "delete_all": "zx ./scripts/delete_all.mjs",
+    "start_all": "zx ./scripts/start_all.mjs",
+    "stop_all": "zx ./scripts/stop_all.mjs",
+    "reload_all": "zx ./scripts/reload_all.mjs",
+    "generate_hostnames": "zx ./scripts/generate_hostnames.mjs",
+    "generate_ipv4": "zx ./scripts/generate_ipv4.mjs",
     "tailscale": "/Applications/Tailscale.app/Contents/MacOS/Tailscale",
     "up": "npm run tailscale -- up --login-server https://tailscale.hepiapp.ch",
-    "down": "npm run tailscale -- down"
+    "down": "npm run tailscale -- down",
+    "pdf": "npx md-to-pdf docs/**/*.md"
   },
   "dependencies": {
     "zx": "^7.1.1"
