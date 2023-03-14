@@ -1,0 +1,40 @@
+#!/bin/bash
+
+# L’IP obtenue par R1 coté eth0 sera obtenue par DHCP avec la commande dhclient -v eth0,
+# car un serveur DHCP est disponible coté nat0
+ssh R1 dhclient -v eth0
+
+# L’IP de R1 coté eth1 et de H1 eth0 sera configurée statiquement avec iproute2,
+# dans le segment IP 10.0.0.0/24. La configuration d’une IP avec iproute est disponible
+# dans la documentation 2
+ssh R1 ip address add 10.0.0.2/24 dev eth1
+ssh R1 ip link set eth1 addr 00:00:00:00:00:1
+ssh R1 ip link set dev eth1 up
+ssh R1 ip link set dev eth0 up
+
+ssh H1 ip address add 10.0.0.1/24 dev eth0
+ssh H1 ip link set eth0 addr 00:00:00:00:00:2
+ssh H1 ip link set dev eth0 up
+
+# La route par défaut de H1 passera par R1, référez vous à la documentation d’iproute
+# pour installer une route par défaut 1
+ssh H1 ip route add default via 10.0.0.2 dev eth0
+
+# Comme R1 est un routeur, il forwarde des paquets et devra avoir
+# /proc/sys/net/ipv4/ip_forward posé à 1.
+ssh R1 sysctl net.ipv4.ip_forward=1
+
+# R1 implémentera une passerelle NAT à l’aide de nftables pour cela, il faut
+# exécuter le script nftables suivant sur R1
+
+parent_path=$(cd "$(dirname "${BASH_SOURCE[0]}")" ; pwd -P)
+scp "$parent_path/nat" R1:/tmp/nat
+ssh R1 chmod +x /tmp/nat
+ssh R1 /tmp/nat
+
+echo "waiting for network to be up..."
+sleep 5
+
+# Installation de tcpdump sur H1 et R1 avec la commande apt install -y tcpdump.
+ssh R1 apt install -y tcpdump
+ssh H1 apt install -y tcpdump
