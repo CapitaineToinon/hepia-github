@@ -42,7 +42,7 @@ const pings = hosts
   .join(`\n`);
 
 const output = `#!/bin/bash
-  
+
 echo "adding ip addresses"
 ${ipAddress}
 

@@ -1,0 +1,10 @@
+#!/usr/sbin/nft -f
+
+flush ruleset
+
+table ip nat {
+    chain masq {
+        type nat hook postrouting priority 100;
+        oifname "veth0" counter masquerade
+    }
+}

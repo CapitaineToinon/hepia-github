@@ -14,7 +14,8 @@
     "tailscale": "/Applications/Tailscale.app/Contents/MacOS/Tailscale",
     "up": "pnpm run tailscale -- up --login-server https://tailscale.hepiapp.ch",
     "down": "pnpm run tailscale -- down",
-    "pdf": "md-to-pdf labs/**/*.md"
+    "pdf": "md-to-pdf labs/**/*.md",
+    "clean": "rm labs/**/*.pdf"
   },
   "dependencies": {
     "md-to-pdf": "^5.2.3",

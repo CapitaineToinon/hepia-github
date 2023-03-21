@@ -1,0 +1,58 @@
+#!/bin/bash
+set -e
+
+echo "Create a new network namespace named ns2:"
+ssh R1 ip netns add ns2
+
+echo "Create veth0 and veth1 virtual Ethernet devices:"
+echo "also rename to have the same name as in the other namespace"
+ssh R1 ip link add veth0 type veth peer name veth1
+ssh R1 ip link set veth1 netns ns2
+ssh R1 ip netns exec ns2 ip link set veth1 name veth0
+ssh R1 ip link add veth1 type veth peer name veth2
+ssh R1 ip link set veth2 netns ns2
+ssh R1 ip netns exec ns2 ip link set veth2 name veth1
+
+echo "Assign IP addresses to veth0 and veth1:"
+ssh R1 ip address add 192.168.0.1/24 dev veth0
+ssh R1 ip netns exec ns2 ip address add 192.168.0.2/24 dev veth0
+ssh R1 ip address add 192.168.1.1/24 dev veth1
+ssh R1 ip netns exec ns2 ip address add 192.168.1.2/24 dev veth1
+
+echo "Enable both interfaces:"
+ssh R1 ip link set veth0 up
+ssh R1 ip netns exec ns2 ip link set veth0 up
+ssh R1 ip link set veth1 up
+ssh R1 ip netns exec ns2 ip link set veth1 up
+
+echo "-- copy pasted from https://hepia.infolibre.ch/VRES-2022-2023/labos/virtualisation_de_pile_tcp_ip.html --"
+echo "Comme le trafic transite par un routeur virtuel présent sur l’hôte R1,"
+echo "il faut pouvoir distinguer le trafic qui provient de l’hôte du trafic"
+echo "qui provient de R2 au niveau de la destination par défaut. Pour cela"
+echo "nous utiliserons le policy routing et ip rule 3 de la manière suivante"
+echo "sur R1:"
+echo "Effacement de la route par défaut obtenue par dhclient."
+ssh R1 ip route delete default
+echo "Redirection des paquets via l'interface veth qui mène à R2."
+ssh R1 ip route add default via 192.168.1.2 dev veth1
+echo "Utilisation du policy routing pour passer par eth0 si le trafic vient de R2."
+echo "172.21.1.1 est la passerelle obtenue par DHCP sur le Nuage Internet."
+ssh R1 "echo 100 custom >> /etc/iproute2/rt_tables"
+ssh R1 ip rule add iif veth0 table custom
+ssh R1 ip route add default via 172.21.1.1 table custom
+echo "-- end of copy pasted content --"
+
+echo "Comme R2 est un routeur, il forwarde des paquets et devra avoir"
+echo "/proc/sys/net/ipv4/ip_forward posé à 1."
+ssh R1 ip netns exec ns2 sysctl net.ipv4.ip_forward=1
+
+echo "R1 implémentera une passerelle NAT à l’aide de nftables pour cela, il faut"
+echo "exécuter le script nftables suivant sur R2"
+parent_path=$(cd "$(dirname "${BASH_SOURCE[0]}")" ; pwd -P)
+scp "$parent_path/nat_R2" R1:/tmp/nat_R2
+ssh R1 chmod +x /tmp/nat_R2
+ssh R1 ip netns exec ns2 /tmp/nat_R2
+
+echo "Adding default routes to R2"
+ssh R1 ip netns exec ns2 ip route add default via 192.168.0.1 dev veth0
+ssh R1 ip netns exec ns2 ip route add 10.0.0.0/24 via 192.168.1.1 dev veth1

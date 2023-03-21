@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 
 ssh H1 ping -c 4 1.1.1.1
 ssh H1 ping -c 4 10.0.0.2

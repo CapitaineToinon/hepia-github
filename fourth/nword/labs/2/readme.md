@@ -132,3 +132,7 @@ traceroute to 1.1.1.1 (1.1.1.1), 30 hops max, 60 byte packets
 ```
 
 Comme on peut le voir sur l'output de la commande `traceroute`, le premier hop est `R1` avec l'ip `10.0.0.2` que nous avons configuré précédemment.
+
+# 2 - Routeur virtuel routé
+
+## A - Préparation
