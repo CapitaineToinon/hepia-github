@@ -1,0 +1,20 @@
+#!/bin/bash
+set -e
+
+parent_path=$(cd "$(dirname "${BASH_SOURCE[0]}")" ; pwd -P)
+
+H1_IP=$(ssh -G H1 | grep "hostname " | awk '{print $2}' | head -n 1)
+H1_PORT=$(($(ssh -G H1 | grep "port " | awk '{print $2}'  | head -n 1) - 1))
+H2_IP=$(ssh -G H2 | grep "hostname " | awk '{print $2}' | head -n 1)
+H2_PORT=$(($(ssh -G H2 | grep "port " | awk '{print $2}' | head -n 1) - 1))
+
+echo "H1_IP: $H1_IP"
+echo "H1_PORT: $H1_PORT"
+
+"$parent_path/telnet" $H1_IP $H1_PORT
+"$parent_path/telnet" $H2_IP $H2_PORT
+
+sleep 5
+
+ssh H1 ping -c 1 8.8.8.8
+ssh H2 ping -c 1 8.8.8.8

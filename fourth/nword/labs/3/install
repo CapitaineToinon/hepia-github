@@ -1,0 +1,5 @@
+#!/bin/bash
+set -e
+
+ssh H1 apt install -y nginx wireguard curl 
+ssh H2 apt install -y nginx wireguard curl

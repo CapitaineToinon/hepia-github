@@ -333,3 +333,63 @@ PING 1.0.0.3 (1.0.0.3) 56(84) bytes of data.
 1 packets transmitted, 1 received, 0% packet loss, time 0ms
 rtt min/avg/max/mdev = 3.346/3.346/3.346/0.000 ms
 ```
+
+# nginx and wireguard
+
+The first step is to get an ip using DHCP on the host to then being able to install nginx and wireguard. However we cannot do that over ssh because it would kill out connection so we need to use telnet instead. For this, I wrote an `expect` script that takes an IP and PORT from the arguments and then connects to the host using telnet. It then renew the DHCP lease to get an IP.
+
+```bash
+#!/usr/bin/expect -f
+set timeout 5
+set host [lindex $argv 0]
+set port [lindex $argv 1]
+
+spawn telnet $host $port
+expect -re "> ?$"
+send "dhclient -r\r"
+send "dhclient -v mgmt0\r"
+expect -re "> ?$"
+send "exit\r"
+expect eof
+```
+
+I then wrote a bash script that will parse the ssh config to extract the IP and PORT of each host and then run the expect script on each host.
+
+```bash
+#!/bin/bash
+set -e
+
+# Get the parent path of the script to run the telnet script
+parent_path=$(cd "$(dirname "${BASH_SOURCE[0]}")" ; pwd -P)
+
+# Get the IP and PORT of each host from the ssh config
+H1_IP=$(ssh -G H1 | grep "hostname " | awk '{print $2}' | head -n 1)
+H1_PORT=$(($(ssh -G H1 | grep "port " | awk '{print $2}'  | head -n 1) - 1))
+H2_IP=$(ssh -G H2 | grep "hostname " | awk '{print $2}' | head -n 1)
+H2_PORT=$(($(ssh -G H2 | grep "port " | awk '{print $2}' | head -n 1) - 1))
+
+echo "H1_IP: $H1_IP"
+echo "H1_PORT: $H1_PORT"
+
+"$parent_path/telnet" $H1_IP $H1_PORT
+"$parent_path/telnet" $H2_IP $H2_PORT
+
+sleep 5
+
+# ensure we can ping the internet
+ssh H1 ping -c 1 8.8.8.8
+ssh H2 ping -c 1 8.8.8.8
+```
+
+These scripts have to be called manually and won't be part of the playbook.
+
+# Playbook
+
+Before configuring the playbook we need to generate public and private keypair for each host. This can be done using the following command:
+
+```bash
+ssh H1 "wg genkey | tee privatekey | wg pubkey > publickey"
+ssh H2 "wg genkey | tee privatekey | wg pubkey > publickey"
+```
+
+Note that we won't bother using a vault in this example and will use the keys directly in the playbook.

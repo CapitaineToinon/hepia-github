@@ -1,0 +1,9 @@
+[Interface]
+PrivateKey={{ wg_private_key_h1 }}
+Address=10.0.0.1/24
+SaveConfig=true
+
+[Peer]
+PublicKey={{ wg_public_key_h2 }}
+AllowedIPs=10.0.0.2/32
+Endpoint={{ hostvars['H2']['interfaces'][0]['ip_address'] }}:{{ wg_port }}

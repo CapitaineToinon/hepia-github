@@ -1,0 +1,34 @@
+- name: Configure Wireguard on H1 and H2
+  hosts: hosts
+  vars:
+    wg_private_key_h1: "kKlwvevRAcGwtk12aGmUNB1zJ5jqHOex3yagKV7DQHg="
+    wg_private_key_h2: "AAKN+Y2SQELElTAmeHJ3Yd9HlEM89w5v4jRZDSa1wXQ="
+    wg_public_key_h1: "2FBMUerJH+3ZKg60C39L9H/enp6E58P2Z9hDKbsplzc=="
+    wg_public_key_h2: "TLW/uRJGvKtlrdqkv3oYD2T1VkfNYVpI5keuuZ5V5nw="
+    wg_port: 51820
+  tasks:
+    - name: init wg
+      file:
+        path: /etc/wireguard/wg0.conf
+        state: touch
+    - name: configure wg on h1
+      when: inventory_hostname == "H1"
+      template:
+        src: wg0.conf.H1.j2
+        dest: /etc/wireguard/wg0.conf
+      register: wireguard_H1_configuration
+      notify:
+        - start wg
+    - name: configure wg on h2
+      when: inventory_hostname == "H2"
+      template:
+        src: wg0.conf.H2.j2
+        dest: /etc/wireguard/wg0.conf
+      register: wireguard_H2_configuration
+      notify:
+        - start wg
+  handlers:
+    - name: start wg
+      systemd:
+        name: wg-quick@wg0
+        state: started
