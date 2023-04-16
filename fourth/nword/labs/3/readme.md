@@ -31,6 +31,21 @@ The first step is as usual to configure ssh to enable the ssh connections. Once 
 pip install -r requirements.txt
 ```
 
+Given the following requirements.txt file:
+
+```
+ansible==7.4.0
+ansible-core==2.14.4
+cffi==1.15.1
+cryptography==40.0.2
+Jinja2==3.1.2
+MarkupSafe==2.1.2
+packaging==23.1
+pycparser==2.21
+PyYAML==6.0
+resolvelib==0.8.1
+```
+
 Then configure all the IPs for H1, H2, R1 and R2.
 
 ```
@@ -381,6 +396,13 @@ ssh H1 ping -c 1 8.8.8.8
 ssh H2 ping -c 1 8.8.8.8
 ```
 
+H1 and H2 now have access to the internet and we can install the packages we need.
+
+```bash
+ssh H1 apt install -y nginx wireguard curl
+ssh H2 apt install -y nginx wireguard curl
+```
+
 These scripts have to be called manually and won't be part of the playbook.
 
 # Playbook
@@ -392,4 +414,200 @@ ssh H1 "wg genkey | tee privatekey | wg pubkey > publickey"
 ssh H2 "wg genkey | tee privatekey | wg pubkey > publickey"
 ```
 
-Note that we won't bother using a vault in this example and will use the keys directly in the playbook.
+Note that we won't bother using a vault in this example and will use the keys directly in the playbook. We can now add all the variables we need to the playbook.
+
+```yaml
+- name: wireguard on H1 and H2
+  hosts: hosts
+  vars:
+    wg_private_key_h1: "kKlwvevRAcGwtk12aGmUNB1zJ5jqHOex3yagKV7DQHg="
+    wg_private_key_h2: "AAKN+Y2SQELElTAmeHJ3Yd9HlEM89w5v4jRZDSa1wXQ="
+    wg_public_key_h1: "2FBMUerJH+3ZKg60C39L9H/enp6E58P2Z9hDKbsplzc=="
+    wg_public_key_h2: "TLW/uRJGvKtlrdqkv3oYD2T1VkfNYVpI5keuuZ5V5nw="
+    wg_port: 51820
+```
+
+We can now start creating the tasks. The first one ensures we have an existing wg config file.
+
+```yaml
+tasks:
+  - name: init wg
+    file:
+      path: /etc/wireguard/wg0.conf
+      state: touch
+```
+
+Then for H1 and H2, we configure wireguard so they can each communicate with each other.
+
+```yaml
+- name: configure wg on h1
+  when: inventory_hostname == "H1"
+  template:
+    src: wg0.conf.H1.j2
+    dest: /etc/wireguard/wg0.conf
+  register: wireguard_H1_configuration
+  notify:
+    - start wg
+- name: configure wg on h2
+  when: inventory_hostname == "H2"
+  template:
+    src: wg0.conf.H2.j2
+    dest: /etc/wireguard/wg0.conf
+  register: wireguard_H2_configuration
+  notify:
+    - start wg
+```
+
+And here are the following jinja templates.
+
+`wg0.conf.H1.j2`
+
+```jinja
+[Interface]
+PrivateKey={{ wg_private_key_h1 }}
+Address=10.0.0.1/24
+ListenPort={{ wg_port }}
+SaveConfig=true
+
+[Peer]
+PublicKey={{ wg_public_key_h2 }}
+AllowedIPs=10.0.0.2/32
+Endpoint={{ hostvars['H2']['interfaces'][0]['ip_address'] }}:{{ wg_port }}
+```
+
+`wg0.conf.H2.j2`
+
+```jinja
+[Interface]
+PrivateKey={{ wg_private_key_h2 }}
+Address=10.0.0.2/24
+ListenPort={{ wg_port }}
+SaveConfig=true
+
+[Peer]
+PublicKey={{ wg_public_key_h1 }}
+AllowedIPs=10.0.0.1/32
+Endpoint={{ hostvars['H1']['interfaces'][0]['ip_address'] }}:{{ wg_port }}
+```
+
+Finally we have the handlers to start and stop wireguard.
+
+```yaml
+handlers:
+  - name: start wg
+    systemd:
+      name: wg-quick@wg0
+      state: restarted
+```
+
+From there we can take care of nginx. First my creating a config
+
+```yaml
+- name: nginx config for H2
+  when: inventory_hostname == "H2"
+  template:
+    src: nginx.config.j2
+    dest: /etc/nginx/sites-available/wireguard_site
+    force: yes
+```
+
+Based on this template `nginx.html.j2`:
+
+```jinja
+server {
+    listen 10.0.0.2:{{ wg_port }};
+
+    root /var/www/html;
+    index help.html;
+
+    server_name _;
+
+    location / {
+        try_files $uri $uri/ =404;
+    }
+}
+```
+
+Then we create a simple html page:
+
+```yaml
+- name: create HTML file for H2
+  when: inventory_hostname == "H2"
+  template:
+    src: nginx.html.j2
+    dest: /var/www/html/help.html
+```
+
+Based on this HTML page:
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Kill me</title>
+  </head>
+  <body>
+    <h1>I hate everything about this</h1>
+    <p>Welcome to our Wireguard-connected web server. Please end me</p>
+  </body>
+</html>
+```
+
+Now we can enable our config and delete the default one.
+
+```yaml
+- name: enable nginx for H2
+  when: inventory_hostname == "H2"
+  file:
+    src: /etc/nginx/sites-available/wireguard_site
+    dest: /etc/nginx/sites-enabled/wireguard_site
+    state: link
+- name: remove default nginx config
+  when: inventory_hostname == "H2"
+  file:
+    path: /etc/nginx/sites-enabled/default
+    state: absent
+```
+
+Finally, ensure we restart nginx.
+
+```yaml
+- name: start nginx
+  when: inventory_hostname == "H2"
+  systemd:
+    name: nginx
+    state: restarted
+```
+
+# Testing
+
+We can now test our setup. First we need to start the playbook.
+
+```bash
+ansible-playbook -i hosts playbook.yml
+```
+
+Then we can test that we can access the web server from H1.
+
+```bash
+ssh H1 curl 10.0.0.2:51820
+```
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Kill me</title>
+  </head>
+  <body>
+    <h1>I hate everything about this</h1>
+    <p>Welcome to our Wireguard-connected web server. Please end me</p>
+  </body>
+</html>
+```
+
+Everything works!

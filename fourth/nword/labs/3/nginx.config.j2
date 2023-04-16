@@ -1,0 +1,12 @@
+server {
+    listen 10.0.0.2:{{ wg_port }};
+
+    root /var/www/html;
+    index help.html;
+
+    server_name _;
+
+    location / {
+        try_files $uri $uri/ =404;
+    }
+}
