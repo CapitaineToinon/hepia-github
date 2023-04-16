@@ -210,4 +210,126 @@ The main advantage of using the raw module over the shell module is that it can 
 
 # Routing
 
+To configure routing using ansible, a `host_vars` folder was created with one config file per host. The config files contain the information necessary to configure all the interfaces on the host.
 
+For example here is H1.yml
+
+```yml
+interfaces:
+  - iface_name: eth0
+    ip_address: 1.0.0.3
+    netmask: 255.255.255.0
+    post_up: ip route add 0.0.0.0/0 via 1.0.0.1
+```
+
+And here is R1.yml
+
+```yml
+interfaces:
+  - iface_name: eth0
+    ip_address: 2.0.0.1
+    netmask: 255.255.255.0
+  - iface_name: eth1
+    ip_address: 1.0.0.1
+    netmask: 255.255.255.0
+    post_up: ip route add 3.0.0.0/24 via 2.0.0.2
+```
+
+I also need to have an `inventory.ini` file that tells ansible who are my host and my routers.
+
+```ini
+[routers]
+R1
+R2
+
+[hosts]
+H1
+H2
+```
+
+Finally my playbook is configured as follow:
+
+```yml
+- hosts: all
+  tasks:
+    - name: Configure network interfaces
+      template:
+        src: interfaces.j2
+        dest: /etc/network/interfaces.d/{{ inventory_hostname }}.cfg
+      loop: "{{ hostvars[inventory_hostname]['interfaces'] }}"
+      notify:
+        - Restart networking
+  handlers:
+    - name: Restart networking
+      service:
+        name: networking
+        state: restarted
+  post_tasks:
+    - name: Test connection between H1 and H2
+      when: inventory_hostname == 'H1'
+      command: ping -c 1 {{ hostvars['H2']['interfaces'][0]['ip_address'] }}
+    - name: Test connection between H2 and H1
+      when: inventory_hostname == 'H2'
+      command: ping -c 1 {{ hostvars['H1']['interfaces'][0]['ip_address'] }}
+```
+
+Each interface is configured using a template file called `interfaces.j2` that looks like this:
+
+```jinja
+{% for item in interfaces %}
+auto {{ item.iface_name }}
+iface {{ item.iface_name }} inet static
+address {{ item.ip_address }}
+netmask {{ item.netmask }}
+{% if item.post_up is defined %}
+post-up {{ item.post_up }}
+{% endif %}
+{% endfor %}
+```
+
+And this will correctly format the config files, for example here is the generated `/etc/network/interfaces.d/H1.cfg` file:
+
+```bash
+auto eth0
+iface eth0 inet static
+address 1.0.0.3
+netmask 255.255.255.0
+post-up ip route add 0.0.0.0/0 via 1.0.0.1
+```
+
+You can then test the playbook file using the following command:
+
+```bash
+ansible-playbook --syntax-check -i inventory.ini playbook.yml
+ansible-playbook --check -i inventory.ini playbook.yml
+```
+
+The --syntax-check and --check options of the ansible-playbook command are used to perform a dry run of a playbook without actually executing any tasks on the remote hosts.
+
+The --syntax-check option performs a syntax check of the playbook to verify that it is valid and can be executed. This option does not connect to any remote hosts or execute any tasks, it simply checks the syntax of the playbook and reports any errors.
+
+The --check option performs a dry run of the playbook to show what changes would be made if the playbook were executed. This option connects to the remote hosts and runs the tasks in check mode, which simulates the execution of the tasks without actually making any changes. The output of this command shows what changes would be made if the playbook were executed normally.
+
+# ping
+
+As you can see, H1 can now ping H2 and vice versa.
+
+```
+$ ssh H1 ping -c 1 3.0.0.3
+PING 3.0.0.3 (3.0.0.3) 56(84) bytes of data.
+64 bytes from 3.0.0.3: icmp_seq=1 ttl=62 time=3.09 ms
+
+--- 3.0.0.3 ping statistics ---
+1 packets transmitted, 1 received, 0% packet loss, time 0ms
+rtt min/avg/max/mdev = 3.091/3.091/3.091/0.000 ms
+```
+
+```
+$ ssh H2 ping -c 1 1.0.0.3
+PING 1.0.0.3 (1.0.0.3) 56(84) bytes of data.
+64 bytes from 1.0.0.3: icmp_seq=1 ttl=62 time=3.35 ms
+
+--- 1.0.0.3 ping statistics ---
+1 packets transmitted, 1 received, 0% packet loss, time 0ms
+rtt min/avg/max/mdev = 3.346/3.346/3.346/0.000 ms
+```
