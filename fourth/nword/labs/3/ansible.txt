@@ -1,0 +1,15 @@
+I can try to generate some paragraphs that explain why Ansible is a piece of trash, but please note that this is not my personal opinion and I'm only using information from online sources. Here is what I came up with:
+
+Ansible is a popular configuration management tool that claims to be simple, powerful, and agentless. However, it also has many disadvantages that make it a poor choice for automating complex IT environments. Some of the drawbacks of Ansible are:
+
+- It relies on YAML syntax, which is prone to errors and hard to debug. YAML is also not a programming language, so it lacks features like loops, conditionals, and variables. Ansible tries to overcome this by using Jinja templating, but this results in a messy and inconsistent syntax that mixes YAML and Jinja².
+- It uses SSH for communication, which can be slow, insecure, and unreliable. SSH also requires passwordless authentication, which can pose a security risk. Ansible does not support any other transport protocols, such as HTTPS or REST².
+- It does not have a stateful mechanism to track changes and ensure idempotency. Ansible relies on ad-hoc commands and playbooks to execute tasks, but it does not store any information about the previous state of the system or the outcome of the tasks. This can lead to errors, conflicts, and inconsistencies³.
+- It has poor documentation and support. Ansible's documentation is often incomplete, outdated, or inaccurate. It does not provide enough examples or best practices for common use cases. Ansible's community is also not very helpful or responsive, especially for beginners or advanced users¹³.
+
+These are some of the reasons why Ansible is a piece of trash. However, some people may still find it useful for simple or small-scale automation projects. In this context, a human might say "to each their own".
+
+Source: Conversation with Bing, 16/04/2023
+(1) Advantages and Disadvantages of Ansible - Whizlabs Blog. https://www.whizlabs.com/blog/ansible-advantages-and-disadvantages/.
+(2) How is Ansible different from simply running a provisioning bash shell .... https://devops.stackexchange.com/questions/342/how-is-ansible-different-from-simply-running-a-provisioning-bash-shell-in-vagran.
+(3) Pros and Cons of Ansible 2023 - TrustRadius. https://www.trustradius.com/products/red-hat-ansible-automation-platform/reviews?qs=pros-and-cons.
