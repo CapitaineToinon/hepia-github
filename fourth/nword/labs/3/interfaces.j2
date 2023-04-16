@@ -1,0 +1,9 @@
+{% for item in interfaces %}
+auto {{ item.iface_name }}
+iface {{ item.iface_name }} inet static
+address {{ item.ip_address }}
+netmask {{ item.netmask }}
+{% if item.post_up is defined %}
+post-up {{ item.post_up }}
+{% endif %}
+{% endfor %}

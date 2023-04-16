@@ -1,0 +1,28 @@
+#!/bin/bash
+set -e
+
+echo "configure the correct IPs for H1, H2, R1 and R2"
+ssh H1 ip addr add 1.0.0.3/24 dev eth0
+ssh H1 ip link set up dev eth0
+
+ssh R1 ip addr add 1.0.0.1/24 dev eth1
+ssh R1 ip link set up dev eth1
+ssh R1 ip addr add 2.0.0.1/24 dev eth0
+ssh R1 ip link set up dev eth0
+
+ssh R2 ip addr add 2.0.0.2/24 dev eth0
+ssh R2 ip link set up dev eth0
+ssh R2 ip addr add 3.0.0.2/24 dev eth1
+ssh R2 ip link set up dev eth1
+
+ssh H2 ip addr add 3.0.0.3/24 dev eth0
+ssh H2 ip link set up dev eth0
+
+echo "test ansible ping"
+ansible -m ping -i "H1,H2,R1,R2" all
+
+echo "check the uptime"
+ansible all -i "H1,H2,R1,R2," -m command -a "uptime"
+
+echo "create a file on all machines"
+ansible all -i "H1,H2,R1,R2," -m file -a "path=/tmp/hello.txt state=touch"

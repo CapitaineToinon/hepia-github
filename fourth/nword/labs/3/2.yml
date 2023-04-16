@@ -1,0 +1,21 @@
+- hosts: all
+  tasks:
+    - name: Configure network interfaces
+      template:
+        src: interfaces.j2
+        dest: /etc/network/interfaces.d/{{ inventory_hostname }}.cfg
+      loop: "{{ hostvars[inventory_hostname]['interfaces'] }}"
+      notify:
+        - Restart networking
+  handlers:
+    - name: Restart networking
+      service:
+        name: networking
+        state: restarted
+  post_tasks:
+    - name: Test connection between H1 and H2
+      when: inventory_hostname == 'H1'
+      command: ping -c 1 {{ hostvars['H2']['interfaces'][0]['ip_address'] }}
+    - name: Test connection between H2 and H1
+      when: inventory_hostname == 'H2'
+      command: ping -c 1 {{ hostvars['H1']['interfaces'][0]['ip_address'] }}
